@@ -19,3 +19,4 @@
 
 (defvalidator vvector vector?)
 
+(defvalidator vcount [range-fn] (fn [x] (range-fn (count x))))

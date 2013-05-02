@@ -1,29 +1,35 @@
 (ns simple-schema.core)
 
 (defn error [& xs]
-  (when-let [errors (seq (flatten (remove nil? xs)))]
+  (when-let [errors (seq (remove nil? (flatten xs)))]
     (with-meta (vec errors) {::error true})))
 
 (defn error? [x]  (::error (meta x)))
 
-(defn tag-validator [x] (with-meta x {::validator true}))
+(defn tag-validator [x]
+  (with-meta
+    x
+    {::validator true}))
 
 (defn is-validator? [x] (::validator (meta x)))
 
-(defn tag-mutator [x] (with-meta x {::validator true}))
+(defn tag-mutator [x] (with-meta x {::mutator true}))
 
 (defn is-mutator? [x] (::mutator (meta x)))
 
+(declare ->mutator)
+(declare ->validator)
+
 (defn mutator->validator [mutator]
   (tag-validator
-   (fn [x & opts]
-     (let [res (apply mutator x opts)]
+   (fn [x opts]
+     (let [res (mutator x opts)]
        (when (error? res) res)))))
 
 (defn validator->mutator [validator]
   (tag-mutator
-    (fn [x & opts]
-      (let [res (apply validator x opts)]
+    (fn [x opts]
+      (let [res (validator x opts)]
         (when (error? x)
           x)))))
 
@@ -31,25 +37,25 @@
   (if (= 1 (count mutators))
     (first mutators)
     (tag-mutator
-     (fn mutator-chain [x & opts]
+     (fn mutator-chain [x opts]
        (loop [x x [m & more] mutators]
-         (if m
-           (let [x (apply m x opts)]
-             (if (error? x)
-               x
-               (recur x more)))
-           x))))))
+         (let [x (m x opts)]
+           (if (error? x)
+             x
+             (if more
+               (recur x more)
+               x))))))))
 
 (defn map->mutator [x]
   (let [mmap (into {} (map (fn [[k v]] [k (->mutator v)]) x))]
     (tag-mutator
-     (fn map-mutator [obj & opts]
+     (fn map-mutator [obj opts]
        (when obj
          (if (map? obj)
            (loop [obj obj [[k m] & more] (seq mmap)]
              (if m
-               (if-let [v (get obj k)]
-                 (let [v (apply m v opts)]
+               (if-let [v (if (nil? k) obj (get obj k))]
+                 (let [v (m v opts)]
                    (if (error? v)
                      v
                      (recur (assoc obj k v) more)))
@@ -63,7 +69,7 @@
      (cond
       (is-mutator? x) x
       (is-validator? x) (validator->mutator x)
-      (fn? x) (fn mutator-wrapper [val & opts] (x val))
+      (fn? x) (tag-mutator (fn mutator-wrapper [val opts] (x val)))
       (map? x) (map->mutator x)
       (seq x) (apply ->mutator x)
       :else (throw (ex-info (str "Don't know how to coerce " x " to mutator")
@@ -74,18 +80,20 @@
   (if (= 1 (count validators))
     (first validators)
     (tag-validator
-     (fn validator-chain [x & opts]
+     (fn validator-chain [x opts]
        (loop [[v & more] validators]
          (when v
-           (if-let [res (apply v x opts)]
+           (if-let [res (v x opts)]
              res
              (recur more))))))))
 
 (defn- prepend-error-paths [errors k]
   (seq
-   (map
-    (fn [err] (update-in err [:path] (fn [path] (conj path k))))
-    errors)))
+   (if (nil? k)
+     errors
+     (map
+      (fn [err] (update-in err [:path] (fn [path] (conj path k))))
+      errors))))
 
 (defn- take-path-step [{:keys [path] :as opts}]
   (if path
@@ -95,17 +103,18 @@
 (defn- map->validator [x]
   (let [vmap (into {} (map (fn [[k v]] [k (->validator v)]) x))]
     (tag-validator
-     (fn [obj & opts]
+     (fn map-validator
+       [obj opts]
        (when obj
          (if (map? obj)
            (let [[step opts] (take-path-step opts)]
-             (apply
-              error
+             (error
               (for [[k v] vmap]
                 (when (or (not step) (= k step))
-                  (let [x (get obj k)
-                        res (apply v x opts)]
-                    (prepend-error-paths res k))))))
+                  (let [x (if (nil? k) obj (get obj k))
+                        res (v x opts)]
+                    (when res
+                      (prepend-error-paths res k)))))))
            (error {:code ::invalid-map :message "Not a valid map"})))))))
 
 (defn ->validator [& args]
@@ -123,14 +132,14 @@
 (defn simple-validator [{:keys [message name test-fn params]}]
   (tag-validator
    (fn
-     [x & opts]
+     [x opts]
      (when x
        (when-not (test-fn x)
          (error {:code name :message message :params params :value x}))))))
 
 (def not-nil
   (tag-validator
-   (fn required [x & opts]
+   (fn required [x opts]
      (when-not x
        (error {:code ::required :message "Required value missing or nil" :value x})))))
 
@@ -150,33 +159,51 @@
                  ~(apply hash-map (rest kvs))))))))
 
 (defmacro defschema [name & kvs]
-  `(def ~name (simple-schema.core/->validator ~(apply hash-map kvs))))
+  `(def ~name (simple-schema.core/->validator
+               simple-schema.core/not-nil
+               ~(apply hash-map kvs))))
 
 (defn veach [f]
-  (tag-validator
-   (fn veach [xs & {:as opts}]
-     (let [[step opts] (take-path-step opts)]
-       (println step)
-       (error
-        (map-indexed
-         (fn [idx x]
-           (when (or (not step) (= step idx))
-             (when-let [err (apply f x opts)]
-               (prepend-error-paths err idx))))
-         xs))))))
+  (let [f (->validator f)]
+    (tag-validator
+     (fn veach [xs opts]
+       (let [[step opts] (take-path-step opts)]
+         (error
+          (map-indexed
+           (fn [idx x]
+             (when (or (not step) (= step idx))
+               (when-let [err (f x opts)]
+                 (prepend-error-paths err idx))))
+           xs)))))))
 
 (defn meach [f]
-  (tag-mutator
-   (fn meach [xs & opts]
-     (let [xs-res
-           (map-indexed
-            (fn [idx x]
-              (let [res (apply f x opts)]
-                (if (error? res)
-                  (prepend-error-paths res idx)
-                  res)))
-            xs)]
-       (if-let [errors (seq (filter error? xs-res))]
-         (error errors)
-         (vec xs-res))))))
+  (let [f (->mutator)]
+    (tag-mutator
+     (fn meach [xs opts]
+       (let [xs-res
+             (map-indexed
+              (fn [idx x]
+                (let [res (f x opts)]
+                  (if (error? res)
+                    (prepend-error-paths res idx)
+                    res)))
+              xs)]
+         (if-let [errors (seq (filter error? xs-res))]
+           (error errors)
+           (vec xs-res)))))))
 
+;; TODO is the wrappers below necessary?
+
+(defn- validate-or-mutate
+  [func x & {:keys [throw?] :as opts}]
+  (if throw?
+    (let [res (func x (dissoc opts :throw?))]
+      (when (error? res)
+        (throw (ex-info "Validation error" {:type ::validation-error
+                                            :errors res})))
+      res)
+    (func x opts)))
+
+(def validate validate-or-mutate)
+
+(def mutate validate-or-mutate)
