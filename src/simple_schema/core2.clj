@@ -1,4 +1,4 @@
-(ns simple-schema.core)
+(ns simple-schema.core2)
 
 ;; from clojure.algo.generic
 (defmulti fmap
@@ -47,13 +47,21 @@
   [f s]
   (into (empty s) (map (partial deep-fmap f) s)))
 
-;; error stuff
+;; errors stuff
 
-(defn error [& xs]
+(defn- prepend-error-paths [errors k]
+  (seq
+   (if (nil? k)
+     errors
+     (map
+      (fn [err] (update-in err [:path] (fn [path] (conj path k))))
+      errors))))
+
+(defn errors [& xs]
   (when-let [errors (seq (remove nil? (flatten xs)))]
-    (with-meta (vec errors) {::error true})))
+    (with-meta (vec errors) {::errors true})))
 
-(defn error? [x]  (::error (meta x)))
+(defn errors? [x]  (::errors (meta x)))
 
 (defn tag-validator [x]
   (with-meta
@@ -74,42 +82,55 @@
   (tag-validator
    (fn [x opts]
      (let [res (mutator x opts)]
-       (when (error? res) res)))))
+       (when (errors? res) res)))))
 
 (defn validator->mutator [validator]
   (tag-mutator
     (fn [x opts]
       (let [res (validator x opts)]
-        (if (error? res)
+        (if (errors? res)
           res
           x)))))
 
+(defn- if-single-first-or [coll f]
+  (if (= 1 (count coll) (first coll)) (f)))
+
 (defn- mutator-chain [mutators]
-  (if (= 1 (count mutators))
-    (first mutators)
-    (tag-mutator
-     (fn mutator-chain [x opts]
-       (let [mutated (reduce (fn [x m] (m x opts)) x mutators)]
-         (or
-          (some error? mutated)
-          mutated))))))
+  (if-single-first-or
+   mutators
+   (fn [] (tag-mutator
+           (fn mutator-chain [x opts]
+             (let [mutated (reduce (fn [x m] (m x opts)) x mutators)]
+               (or
+                (errors (filter errors? mutated))
+                mutated)))))))
+
+(defn get* [obj k] (if (nil? k) obj (get obj k)))
 
 (defn map->mutator [x]
   (let [mmap (into {} (map (fn [[k v]] [k (->mutator v)]) x))]
     (tag-mutator
-     (fn map-mutator [obj opts]
+     (fn map-mutator [obj]
        (when obj
          (if (map? obj)
-           (loop [obj obj [[k m] & more] (seq mmap)]
-             (if m
-               (if-let [v (if (nil? k) obj (get obj k))]
-                 (let [v (m v opts)]
-                   (if (error? v)
-                     v
-                     (recur (assoc obj k v) more)))
-                 (recur obj more))
-               obj))
-           (error {:error-id ::invalid-map :message "Not a valid map"})))))))
+           (let [mutations
+                 (doall
+                  (remove
+                   nil?
+                   (map (fn [[k m]]
+                          (let [v (get obj k)
+                                mv (m v)]
+                            (when-not (= v mv)
+                              [k mv]))))))
+                 errs
+                 (errors
+                  (map (fn [[k v]]
+                         (when (errors? v)
+                           (prepend-error-paths v k)))
+                       mutations))]
+             (or errs
+                 (reduce (fn [obj [k v]] (assoc obj k v)) obj)))
+           (errors {:error-id ::invalid-map :message "Not a valid map"})))))))
 
 (defn ->mutator [& args]
   (mutator-chain
@@ -117,7 +138,7 @@
      (cond
       (is-mutator? x) x
       (is-validator? x) (validator->mutator x)
-      (fn? x) (tag-mutator (fn mutator-wrapper [val opts] (x val)))
+      (fn? x) (tag-mutator (fn [v] (when-not (nil? v) (x v))))
       (map? x) (map->mutator x)
       (seq x) (apply ->mutator x)
       :else (throw (ex-info (str "Don't know how to coerce " x " to mutator")
@@ -131,14 +152,6 @@
      (fn validator-chain [x opts]
        (some identity (map (fn [v] (v x opts)) validators))))))
 
-(defn- prepend-error-paths [errors k]
-  (seq
-   (if (nil? k)
-     errors
-     (map
-      (fn [err] (update-in err [:path] (fn [path] (conj path k))))
-      errors))))
-
 (defn- take-path-step [{:keys [path] :as opts}]
   (if path
     [(first path) (update-in opts [:path] next)]
@@ -148,18 +161,16 @@
   (let [vmap (fmap ->validator x)]
     (tag-validator
      (fn map-validator
-       [obj opts]
+       [obj]
        (when obj
          (if (map? obj)
-           (let [[step opts] (take-path-step opts)]
-             (error
-              (for [[k v] vmap]
-                (when (or (not step) (= k step))
-                  (let [x (if (nil? k) obj (get obj k))
-                        res (v x opts)]
-                    (when res
-                      (prepend-error-paths res k)))))))
-           (error {:error-id ::invalid-map :message "Not a valid map"})))))))
+           (or
+            (errors
+             (for [[k v] vmap]
+               (when-let [errors (errors? (get* obj k))] 
+                 (prepend-error-paths errors k))))
+            obj)
+           (errors {:error-id ::invalid-map :message "Not a valid map"})))))))
 
 (defn ->validator [& args]
   (validator-chain
@@ -173,32 +184,37 @@
                             {:error-id ::validator-definition-error
                              :x x :args args}))))))
 
-(defn simple-validator [{:keys [message name test-fn params]}]
+(defn constraint* [{:keys [name test-fn message params]}]
   (tag-validator
-   (fn
-     [x opts]
-     (when x
-       (when-not (test-fn x)
-         (error {:error-id name :message message :params params :value x}))))))
+   (fn test-constraint
+     [x]
+     (when-not (nil? x)
+       (if-not (test-fn x)
+         (errors {:error-id (keyword name) :message message :params params :value x})
+         x)))))
+
+(defn constraint [name test-fn & {:as opts}]
+   (constraint* (merge {:name name :test-fn test-fn} opts))))
 
 (def not-nil
   (tag-validator
-   (fn required [x opts]
-     (when-not x
-       (error {:error-id :not-nil :message "Required value missing or nil" :value x})))))
+   (fn not-nil [x]
+     (if-not x
+       (errors {:error-id :not-nil :message "Required value missing or nil" :value x})
+       x))))
 
-(defmacro defvalidator [vname & kvs]
+(defmacro defconstraint [vname & kvs]
   (let [vcode (keyword vname)]
     (if (vector? (first kvs))
       (let [args (first kvs)
             test-fn (second kvs)
             kvs (rest (rest kvs))]
         `(defn ~vname ~args
-           (simple-schema.core/simple-validator
+           (simple-schema.core/constraint*
             (merge {:name ~vcode :params ~args :test-fn ~test-fn}
                    ~(apply hash-map kvs)))))
       `(def ~vname 
-         (simple-schema.core/simple-validator
+         (simple-schema.core/constraint*
           (merge {:name ~vcode :test-fn ~(first kvs)}
                  ~(apply hash-map (rest kvs))))))))
 
@@ -215,9 +231,8 @@
          (error
           (map-indexed
            (fn [idx x]
-             (when (or (not step) (= step idx))
-               (when-let [err (f x opts)]
-                 (prepend-error-paths err idx))))
+             (when-let [err (errors? (f x opts))]
+               (prepend-error-paths err idx)))
            xs)))))))
 
 (defn mutate-each [& fs]
@@ -228,30 +243,13 @@
              (map-indexed
               (fn [idx x]
                 (let [res (f x opts)]
-                  (if (error? res)
+                  (if (errors? res)
                     (prepend-error-paths res idx)
                     res)))
               xs)]
-         (if-let [errors (seq (filter error? xs-res))]
-           (error errors)
+         (if-let [errs (seq (filter errors? xs-res))]
+           (errors errs)
            (vec xs-res)))))))
-
-;; TODO is the wrappers below necessary?
-
-(defn- validate-or-mutate
-  [func x & {:keys [throw?] :as opts}]
-  (if throw?
-    (let [res (func x (dissoc opts :throw?))]
-      (when (error? res)
-        (throw (ex-info "Validation error" {:error-id ::validation-error
-                                            :errors res})))
-      res)
-    (func x opts)))
-
-(def validate validate-or-mutate)
-
-(def mutate validate-or-mutate)
-
 ;; validator-> or ->validator
 ;; veach or v-each or each-validator or validate-each
 ;; meach or m-each
