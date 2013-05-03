@@ -194,7 +194,7 @@
          x)))))
 
 (defn constraint [name test-fn & {:as opts}]
-   (constraint* (merge {:name name :test-fn test-fn} opts))))
+   (constraint* (merge {:name name :test-fn test-fn} opts)))
 
 (def not-nil
   (tag-validator
@@ -228,7 +228,7 @@
     (tag-validator
      (fn veach [xs opts]
        (let [[step opts] (take-path-step opts)]
-         (error
+         (errors
           (map-indexed
            (fn [idx x]
              (when-let [err (errors? (f x opts))]
@@ -250,6 +250,3 @@
          (if-let [errs (seq (filter errors? xs-res))]
            (errors errs)
            (vec xs-res)))))))
-;; validator-> or ->validator
-;; veach or v-each or each-validator or validate-each
-;; meach or m-each

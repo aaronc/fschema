@@ -5,31 +5,31 @@
 
 (defschema S1
   :a not-nil
-  :b vnumber
-  :c [not-nil vstring (vregex #"a.*c")]
-  :d [not-nil (veach [vnumber (v> 5)])])
+  :b v/number?
+  :c [not-nil v/string? (v/re-matches #"a.*c")]
+  :d [not-nil (validate-each-with v/number? (v/> 5))])
 
 (deftest test-schema
-  (is (= (validate S1 nil)
-         [{:code :simple-schema.core/required, :message "Required value missing or nil", :value nil}]))
-  (is (= (validate S1 {})
-         [{:path '(:a), :code :simple-schema.core/required, :message "Required value missing or nil", :value nil}
-          {:path '(:c), :code :simple-schema.core/required, :message "Required value missing or nil", :value nil}
-          {:path '(:d), :code :simple-schema.core/required, :message "Required value missing or nil", :value nil}]))
-  (is (nil? (validate S1 {:a 5 :c "abc" :d [6 7 8]}))))
+  (is (= (S1 nil)
+         [{:error-id :not-nil, :message "Required value missing or nil", :value nil}]))
+  (is (= (S1 {})
+         [{:path '(:a), :error-id :not-nil, :message "Required value missing or nil", :value nil}
+          {:path '(:c), :error-id :not-nil, :message "Required value missing or nil", :value nil}
+          {:path '(:d), :error-id :not-nil, :message "Required value missing or nil", :value nil}]))
+  (is (not (errors? (S1 {:a 5 :c "abc" :d [6 7 8]})))))
 
 (def M1 (->mutator
          {:a str :b #(format "%d" %)}))
 
 (defn test-read-mutator [x]
-  (is (= (mutate (->mutator pr-str read-string) x) x)))
+  (is (= ((->mutator pr-str read-string) x) x)))
 
 (deftest test-mutator
-  (is (= (mutate M1 {:a 5 :b 7}) {:a "5", :b "7"}))
-  (is (= (mutate (->mutator
-                  M1
-                  pr-str)
-                 {:a 7})
+  (is (= (M1 {:a 5 :b 7}) {:a "5", :b "7"}))
+  (is (= ((->mutator
+           M1
+           pr-str)
+           {:a 7})
          "{:a \"7\"}"))
   (test-read-mutator 5)
   (test-read-mutator "abc")

@@ -5,34 +5,34 @@
 
 ;;(def not-nil simple-schema.core/not-nil)
 
-(defvalidator > [x] (fn [y] (clojure.core/> y x)))
+(defconstraint > [x] (fn [y] (clojure.core/> y x)))
 
-(defvalidator < [x] (fn [y] (clojure.core/< y x)))
+(defconstraint < [x] (fn [y] (clojure.core/< y x)))
 
-(defvalidator >= [x] (fn [y] (clojure.core/>= y x)))
+(defconstraint >= [x] (fn [y] (clojure.core/>= y x)))
 
-(defvalidator <= [x] (fn [y] (clojure.core/<= y x)))
+(defconstraint <= [x] (fn [y] (clojure.core/<= y x)))
 
-(defvalidator re-matches [r] (fn [x] (clojure.core/re-matches r x)))
+(defconstraint re-matches [r] (fn [x] (clojure.core/re-matches r x)))
 
-(defvalidator string? clojure.core/string?)
+(defconstraint string? clojure.core/string?)
 
-(defvalidator number? clojure.core/number?)
+(defconstraint number? clojure.core/number?)
 
-(defvalidator map? clojure.core/map?)
+(defconstraint map? clojure.core/map?)
 
-(defvalidator vector? clojure.core/vector?)
+(defconstraint vector? clojure.core/vector?)
 
-(defvalidator seq clojure.core/seq)
+(defconstraint seq clojure.core/seq)
 
-(defvalidator boolean? (fn [x] #{true false} x))
+(defconstraint boolean? (fn [x] #{true false} x))
 
-(defvalidator count= [n] (fn [coll] (= (count coll) n)))
+(defconstraint count= [n] (fn [coll] (= (count coll) n)))
 
-(defvalidator count> [n] (fn [coll] (> (count coll) n)))
+(defconstraint count> [n] (fn [coll] (> (count coll) n)))
 
-(defvalidator count< [n] (fn [coll] (< (count coll) n)))
+(defconstraint count< [n] (fn [coll] (< (count coll) n)))
 
-(defvalidator count<= [n] (fn [coll] (<= (count coll) n)))
+(defconstraint count<= [n] (fn [coll] (<= (count coll) n)))
 
-(defvalidator count>= [n] (fn [coll] (>= (count coll) n)))
+(defconstraint count>= [n] (fn [coll] (>= (count coll) n)))
