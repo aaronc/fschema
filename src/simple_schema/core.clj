@@ -1,5 +1,54 @@
 (ns simple-schema.core)
 
+;; from clojure.algo.generic
+(defmulti fmap
+  "Applies function f to each item in the data structure s and returns
+   a structure of the same kind."
+   {:arglists '([f s])}
+   (fn [f s] (type s)))
+
+(defmethod fmap clojure.lang.IPersistentList
+  [f v]
+  (map f v))
+
+(defmethod fmap clojure.lang.IPersistentVector
+  [f v]
+  (into (empty v) (map f v)))
+
+(defmethod fmap clojure.lang.IPersistentMap
+  [f m]
+  (into (empty m) (for [[k v] m] [k (f v)])))
+
+(defmethod fmap clojure.lang.IPersistentSet
+  [f s]
+  (into (empty s) (map f s)))
+
+(defmulti deep-fmap
+  "Applies function f to each item in the data structure s and returns
+   a structure of the same kind."
+   {:arglists '([f s])}
+   (fn [f s] (type s)))
+
+(defmethod deep-fmap :default [f v] (f v))
+
+(defmethod deep-fmap clojure.lang.IPersistentList
+  [f v]
+  (map (partial deep-fmap f) v))
+
+(defmethod deep-fmap clojure.lang.IPersistentVector
+  [f v]
+  (into (empty v) (map (partial deep-fmap f) v)))
+
+(defmethod deep-fmap clojure.lang.IPersistentMap
+  [f m]
+  (into (empty m) (for [[k v] m] [k (deep-fmap f v)])))
+
+(defmethod deep-fmap clojure.lang.IPersistentSet
+  [f s]
+  (into (empty s) (map (partial deep-fmap f) s)))
+
+;; error stuff
+
 (defn error [& xs]
   (when-let [errors (seq (remove nil? (flatten xs)))]
     (with-meta (vec errors) {::error true})))
@@ -18,6 +67,7 @@
 (defn is-mutator? [x] (::mutator (meta x)))
 
 (declare ->mutator)
+
 (declare ->validator)
 
 (defn mutator->validator [mutator]
@@ -30,7 +80,8 @@
   (tag-mutator
     (fn [x opts]
       (let [res (validator x opts)]
-        (when (error? x)
+        (if (error? res)
+          res
           x)))))
 
 (defn- mutator-chain [mutators]
@@ -38,13 +89,10 @@
     (first mutators)
     (tag-mutator
      (fn mutator-chain [x opts]
-       (loop [x x [m & more] mutators]
-         (let [x (m x opts)]
-           (if (error? x)
-             x
-             (if more
-               (recur x more)
-               x))))))))
+       (let [mutated (reduce (fn [x m] (m x opts)) x mutators)]
+         (or
+          (some error? mutated)
+          mutated))))))
 
 (defn map->mutator [x]
   (let [mmap (into {} (map (fn [[k v]] [k (->mutator v)]) x))]
@@ -61,7 +109,7 @@
                      (recur (assoc obj k v) more)))
                  (recur obj more))
                obj))
-           (error {:code ::invalid-map :message "Not a valid map"})))))))
+           (error {:error-id ::invalid-map :message "Not a valid map"})))))))
 
 (defn ->mutator [& args]
   (mutator-chain
@@ -73,7 +121,7 @@
       (map? x) (map->mutator x)
       (seq x) (apply ->mutator x)
       :else (throw (ex-info (str "Don't know how to coerce " x " to mutator")
-                            {:type ::mutator-definition-error
+                            {:error-id ::mutator-definition-error
                              :x x :args args}))))))
 
 (defn- validator-chain [validators]
@@ -81,11 +129,7 @@
     (first validators)
     (tag-validator
      (fn validator-chain [x opts]
-       (loop [[v & more] validators]
-         (when v
-           (if-let [res (v x opts)]
-             res
-             (recur more))))))))
+       (some identity (map (fn [v] (v x opts)) validators))))))
 
 (defn- prepend-error-paths [errors k]
   (seq
@@ -101,7 +145,7 @@
     [nil opts]))
 
 (defn- map->validator [x]
-  (let [vmap (into {} (map (fn [[k v]] [k (->validator v)]) x))]
+  (let [vmap (fmap ->validator x)]
     (tag-validator
      (fn map-validator
        [obj opts]
@@ -115,7 +159,7 @@
                         res (v x opts)]
                     (when res
                       (prepend-error-paths res k)))))))
-           (error {:code ::invalid-map :message "Not a valid map"})))))))
+           (error {:error-id ::invalid-map :message "Not a valid map"})))))))
 
 (defn ->validator [& args]
   (validator-chain
@@ -126,7 +170,7 @@
       (map? x) (map->validator x)
       (seq x) (apply ->validator x)
       :else (throw (ex-info (str "Don't know how to coerce " x " to validator")
-                            {:type ::validator-definition-error
+                            {:error-id ::validator-definition-error
                              :x x :args args}))))))
 
 (defn simple-validator [{:keys [message name test-fn params]}]
@@ -135,16 +179,16 @@
      [x opts]
      (when x
        (when-not (test-fn x)
-         (error {:code name :message message :params params :value x}))))))
+         (error {:error-id name :message message :params params :value x}))))))
 
 (def not-nil
   (tag-validator
    (fn required [x opts]
      (when-not x
-       (error {:code ::required :message "Required value missing or nil" :value x})))))
+       (error {:error-id :not-nil :message "Required value missing or nil" :value x})))))
 
 (defmacro defvalidator [vname & kvs]
-  (let [vcode (keyword (str *ns* "/" vname))]
+  (let [vcode (keyword vname)]
     (if (vector? (first kvs))
       (let [args (first kvs)
             test-fn (second kvs)
@@ -199,7 +243,7 @@
   (if throw?
     (let [res (func x (dissoc opts :throw?))]
       (when (error? res)
-        (throw (ex-info "Validation error" {:type ::validation-error
+        (throw (ex-info "Validation error" {:error-id ::validation-error
                                             :errors res})))
       res)
     (func x opts)))
@@ -207,3 +251,7 @@
 (def validate validate-or-mutate)
 
 (def mutate validate-or-mutate)
+
+;; validator-> or ->validator
+;; veach or v-each or each-validator or validate-each
+;; meach or m-each

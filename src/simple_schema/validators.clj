@@ -1,22 +1,38 @@
 (ns simple-schema.validators
-  (:use [simple-schema.core]))
+  (:use [simple-schema.core :exclude [not-nil]])
+  (:refer-clojure :exclude [> < <= >= string? number?
+                            map? vector? seq re-matches]))
 
-(defvalidator v> [x] (fn [y] (> y x)))
+;;(def not-nil simple-schema.core/not-nil)
 
-(defvalidator v< [x] (fn [y] (< y x)))
+(defvalidator > [x] (fn [y] (clojure.core/> y x)))
 
-(defvalidator v>= [x] (fn [y] (>= y x)))
+(defvalidator < [x] (fn [y] (clojure.core/< y x)))
 
-(defvalidator v<= [x] (fn [y] (<= y x)))
+(defvalidator >= [x] (fn [y] (clojure.core/>= y x)))
 
-(defvalidator vregex [r] (fn [x] (re-matches r x)))
+(defvalidator <= [x] (fn [y] (clojure.core/<= y x)))
 
-(defvalidator vstring string?)
+(defvalidator re-matches [r] (fn [x] (clojure.core/re-matches r x)))
 
-(defvalidator vnumber number?)
+(defvalidator string? clojure.core/string?)
 
-(defvalidator vmap map?)
+(defvalidator number? clojure.core/number?)
 
-(defvalidator vvector vector?)
+(defvalidator map? clojure.core/map?)
 
-(defvalidator vcount [range-fn] (fn [x] (range-fn (count x))))
+(defvalidator vector? clojure.core/vector?)
+
+(defvalidator seq clojure.core/seq)
+
+(defvalidator boolean? (fn [x] #{true false} x))
+
+(defvalidator count= [n] (fn [coll] (= (count coll) n)))
+
+(defvalidator count> [n] (fn [coll] (> (count coll) n)))
+
+(defvalidator count< [n] (fn [coll] (< (count coll) n)))
+
+(defvalidator count<= [n] (fn [coll] (<= (count coll) n)))
+
+(defvalidator count>= [n] (fn [coll] (>= (count coll) n)))

@@ -1,7 +1,7 @@
 (ns simple-schema.core-test
   (:require [clojure.test :refer :all]
-            [simple-schema.core :refer :all])
-  (:use [simple-schema.validators]))
+            [simple-schema.core :refer :all]
+            [simple-schema.validators :as v]))
 
 (defschema S1
   :a not-nil
