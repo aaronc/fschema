@@ -1,8 +1,26 @@
 # fschema
 
-Elegant functional schemas for Clojure.
+Elegant functional schemas for Clojure and Clojurescript.
 
 ## Usage
+
+## API
+
+### ->v
+
+### ->m
+
+### vseq
+
+### vmap
+
+### mseq
+
+### mmap
+
+### defconstraint
+
+### defschema
 
 
 ## License

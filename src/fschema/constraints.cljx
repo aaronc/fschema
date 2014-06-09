@@ -1,9 +1,9 @@
-(ns simple-schema.validators
-  (:use [simple-schema.core :exclude [not-nil]])
+(ns fschema.constraints
+  (:use [fschema.core :exclude [not-nil]])
   (:refer-clojure :exclude [> < <= >= string? number?
                             map? vector? seq re-matches]))
 
-;;(def not-nil simple-schema.core/not-nil)
+(def not-nil fschema.core/not-nil)
 
 (defconstraint > [x] (fn [y] (clojure.core/> y x)))
 
@@ -23,7 +23,7 @@
 
 (defconstraint vector? clojure.core/vector?)
 
-(defconstraint seq clojure.core/seq)
+(defconstraint seq? clojure.core/seq)
 
 (defconstraint boolean? (fn [x] #{true false} x))
 
