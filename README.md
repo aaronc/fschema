@@ -7,13 +7,17 @@ easily be rendered into human readable (and localizable error messages).
 
 The basic design of the library is to 
 
+# Overview
+
 ## Validation
 
 A validator is any function that takes a value and returns either that
-value or an *error* value (an object truthy to the *error?* function.
+value or an *error* value (any object that responds truthy to the
+*error?* function).
 
 The simplest type of validator is a constraint. Constraints can be
 created with the *constraint* or the *defconstraint* macro.
+
 Constraints have the following property: for every constraint *c*
 other than the *not-nil* constraint, `(= (c nil) nil)`. 
 
