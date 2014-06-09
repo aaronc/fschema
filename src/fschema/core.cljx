@@ -1,6 +1,6 @@
-(ns simple-schema.core)
+(ns fschema.core)
 
-;; from clojure.algo.generic
+;; Taken from clojure.algo.generic
 (defmulti fmap
   "Applies function f to each item in the data structure s and returns
    a structure of the same kind."

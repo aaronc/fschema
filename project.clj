@@ -1,5 +1,14 @@
-(defproject simple-schema "0.1.0"
+(defproject simple-schema "0.2.0-SNAPSHOT"
   :description "Elegant functional validations and mutators for Clojure and Clojurescript"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.5.1"]])
+  :dependencies [[org.clojure/clojure "1.6.0"]]
+  :plugins [[com.keminglabs/cljx "0.4.0"]]
+  :cljx {:builds [{:source-paths ["src"]
+                 :output-path "target/classes"
+                 :rules :clj}
+
+                {:source-paths ["src"]
+                 :output-path "target/classes"
+                 :rules :cljs}]}
+  :profiles {:dev {:plugins [[com.cemerick/austin "0.1.4"]]}})
