@@ -7,9 +7,7 @@ easily be rendered into human readable (and localizable error messages).
 
 The basic design of the library is to 
 
-# Overview
-
-## Validation
+## Validation Basics
 
 A validator is any function that takes a value and returns either that
 value or an *error* value (any object that responds truthy to the
@@ -24,8 +22,25 @@ other than the *not-nil* constraint, `(= (c nil) nil)`.
 Other types of validators can ve created via composition.
 
 
-## Constraints
+## Constraints (simple validators)
 
+### constraint
+
+### defconstraint
+
+## Schemas and Composite Validators
+
+### validator
+
+### veach
+
+### vall
+
+### vwhere
+
+### vall-where
+
+## Mutators
 
 
 ## API
