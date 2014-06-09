@@ -14,7 +14,7 @@
   ^{:author "Konrad Hinsen"
     :doc "Generic functor interface (fmap)"}
   ;; Previously clojure.algo.generic.functor
-  ;; copied here to support Clojurescript
+  ;; copied here to support Clojurescript and suit this library's purposes
   fschema.util.functor)
 
 
@@ -40,26 +40,26 @@
   [f s]
   (into (empty s) (map f s)))
 
-(defmethod fmap clojure.lang.IFn
-  [f fn]
-  (comp f fn))
+;; (defmethod fmap clojure.lang.IFn
+;;   [f fn]
+;;   (comp f fn))
 
-(prefer-method fmap clojure.lang.IPersistentVector clojure.lang.IFn)
-(prefer-method fmap clojure.lang.IPersistentMap clojure.lang.IFn)
-(prefer-method fmap clojure.lang.IPersistentSet clojure.lang.IFn)
+;; (prefer-method fmap clojure.lang.IPersistentVector clojure.lang.IFn)
+;; (prefer-method fmap clojure.lang.IPersistentMap clojure.lang.IFn)
+;; (prefer-method fmap clojure.lang.IPersistentSet clojure.lang.IFn)
 
 (defmethod fmap clojure.lang.LazySeq
   [f s]
   (map f s))
 
-(defmethod fmap java.util.concurrent.Future
-  [f o]
-  (future (f @o)))
+;; (defmethod fmap java.util.concurrent.Future
+;;   [f o]
+;;   (future (f @o)))
 
-(defmethod fmap clojure.lang.Delay
-  [f d]
-  (delay (f @d)))
+;; (defmethod fmap clojure.lang.Delay
+;;   [f d]
+;;   (delay (f @d)))
 
-(defmethod fmap nil
-  [_ _]
-  nil)
+;; (defmethod fmap nil
+;;   [_ _]
+;;   nil)

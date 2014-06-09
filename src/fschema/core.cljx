@@ -1,5 +1,7 @@
 (ns fschema.core
-  (:use [fschema.util.functor :only [fmap]]))
+  (:require
+   [fschema.error :refer :all]
+   [fschema.util.functor :refer [fmap]]))
 
 ;; The core function in fschema is the simple error? function which
 ;; determines if a given value represents an error object. An error object
@@ -7,83 +9,60 @@
 ;; generally be created with the error function which will aggregate multiple
 ;; error maps into a vector of error maps.
 
+(defmulti deep-fmap
+  "Applies function f to each item in the data structure s and returns
+   a structure of the same kind."
+   {:arglists '([f s])}
+   (fn [f s] (type s)))
 
-(defn error?
-  "Determines whether x represents an error. Any object with the :error key set
-   in its meta map is considered to be an error. Returns nil if the object does
-   not represent an error or the error object that was passed to it."
-  [x]
-  (when (:error (meta x)) x))
+(defmethod deep-fmap :default [f v] (f v))
 
-(defn error [& error*]
-  "Marks the given map, vector or sequence of maps and vectors as a vector
-  containing 1 or more error objects.
+(defmethod deep-fmap clojure.lang.IPersistentList
+  [f v]
+  (map (partial deep-fmap f) v))
 
-  Ex:
-    user=> (error {:error-id :test1})
-    [{:error-id :test1}] ;; with {:error true} as the vector's meta map
+(defmethod deep-fmap clojure.lang.IPersistentVector
+  [f v]
+  (into (empty v) (map (partial deep-fmap f) v)))
 
-    user=> (error [{:error-id :test1}])
-    [{:error-id :test1}] 
+(defmethod deep-fmap clojure.lang.IPersistentMap
+  [f m]
+  (into (empty m) (for [[k v] m] [k (deep-fmap f v)])))
 
-    user=> (error [{:error-id :test1}] {:error-id :test2})
-    [{:error-id :test1} {:error-id :test2}] 
+(defmethod deep-fmap clojure.lang.IPersistentSet
+  [f s]
+  (into (empty s) (map (partial deep-fmap f) s)))
 
-    user=> (error [{:error-id :test1}] {:error-id :test2} [{:error-id :test3}])
-    [{:error-id :test1} {:error-id :test2} {:error-id :test3}]
-"
-  (when-let [errors (seq (remove nil? (flatten error*)))]
-    (with-meta (vec errors) {:error true})))
+;; Type hierachy
 
-(defn- prepend-error-paths
-  "Given a seq of error maps, prepend the given path to any path vector in
-   each error map (will create the path vector with the provided path if none
-   exists.
+;; All validators are simply mutators that don't mutate anything
+(derive ::validator ::mutator)
 
-   Ex:
-     user=> (prepend-error-paths [{:error-id :test :path [:a]} {:error-id :test2}] :b)
-     [{:path [:a :b], :error-id :test} {:path (:b), :error-id :test2}]"
-  [errors path]
-  (if (nil? path)
-    errors
-    (error
-     (map
-      (fn [err] (update-in err [:path] (fn [p] (vec (conj p path)))))
-      errors))))
+(derive ::constraint ::validator)
 
+(derive ::vmap ::validator)
 
-;; (defmulti deep-fmap
-;;   "Applies function f to each item in the data structure s and returns
-;;    a structure of the same kind."
-;;    {:arglists '([f s])}
-;;    (fn [f s] (type s)))
+(derive ::mmap ::mutator)
 
-;; (defmethod deep-fmap :default [f v] (f v))
+(derive ::vmap ::mmap)
 
-;; (defmethod deep-fmap clojure.lang.IPersistentList
-;;   [f v]
-;;   (map (partial deep-fmap f) v))
+(derive ::vchain ::validator)
 
-;; (defmethod deep-fmap clojure.lang.IPersistentVector
-;;   [f v]
-;;   (into (empty v) (map (partial deep-fmap f) v)))
+(derive ::mchain ::mutator)
 
-;; (defmethod deep-fmap clojure.lang.IPersistentMap
-;;   [f m]
-;;   (into (empty m) (for [[k v] m] [k (deep-fmap f v)])))
-
-;; (defmethod deep-fmap clojure.lang.IPersistentSet
-;;   [f s]
-;;   (into (empty s) (map (partial deep-fmap f) s)))
+(derive ::vchain ::mchain)
 
 (defn tag-validator [x]
   (with-meta
     x
-    {::validator true}))
+    (merge (meta x) {:type ::validator})))
 
-(defn is-validator? [x] (::validator (meta x)))
+(defn is-validator? [x] (isa? (type x) ::validator))
 
-(defn tag-mutator [x] (with-meta x {::mutator true}))
+(defn tag-mutator [x]
+  (with-meta
+    x
+    (merge (meta x) {::mutator true})))
 
 (defn is-mutator? [x] (::mutator (meta x)))
 
@@ -99,17 +78,12 @@
          res
          x)))))
 
-(defn- if-single-first-or [coll f]
-  (if (= 1 (count coll)) (first coll) (f)))
-
 (defn- mutator-chain [mutators]
   (if (= 1 (count mutators))
     (first mutators)
     (tag-mutator
      (fn mutator-chain [x]
        (reduce (fn [x m] (if (error? x) x (m x))) x mutators)))))
-
-(defn get* [obj k] (if (nil? k) obj (get obj k)))
 
 (defn map->mutator [x]
   (let [mmap (fmap ->mutator x)]
@@ -153,11 +127,13 @@
 (defn- validator-chain [validators]
   (if (= 1 (count validators))
     (first validators)
-    (tag-validator
-     (fn validator-chain [x]
-       (or
-        (first (drop-while (comp not error?) (map (fn [v] (v x)) validators)))
-        x)))))
+    (with-meta
+      (fn validator-chain [x]
+        (or
+         (first (drop-while (comp not error?) (map (fn [v] (v x)) validators)))
+         x))
+      {:type ::vchain
+       :validators validators})))
 
 (defn- take-path-step [{:keys [path] :as opts}]
   (if path
@@ -167,17 +143,19 @@
 (defn- map->validator [x]
   (let [vmap (fmap ->validator x)]
     (tag-validator
-     (fn map-validator
-       [obj]
-       (when obj
-         (if (map? obj)
-           (or
-            (error
-             (for [[k v] vmap]
-               (when-let [errs (error? (v (get* obj k)))] 
-                 (prepend-error-paths errs k))))
-            obj)
-           (error {:error-id ::invalid-map :message "Not a valid map"})))))))
+     (with-meta
+       (fn map-validator
+         [obj]
+         (when obj
+           (if (map? obj)
+             (or
+              (error
+               (for [[k v] vmap]
+                 (when-let [errs (error? (v (get obj k)))] 
+                   (prepend-error-paths errs k))))
+              obj)
+             (error {:error-id ::invalid-map :message "Not a valid map"}))))
+       {::vmap vmap}))))
 
 (defn ->validator [& args]
   (validator-chain
@@ -191,14 +169,19 @@
                             {:error-id ::validator-definition-error
                              :x x :args args}))))))
 
+(defn- tag-constraint [f attrs]
+  (with-meta f (assoc attrs :type ::constraint)))
+
 (defn constraint* [{:keys [name test-fn message params]}]
-  (tag-validator
-   (fn test-constraint
-     [x]
-     (when-not (nil? x)
-       (if-not (test-fn x)
-         (error {:error-id (keyword name) :message message :params params :value x})
-         x)))))
+  (let [attrs {:error-id (keyword name) :message message :params params}]
+    (tag-constraint
+      (fn test-constraint
+        [x]
+        (when-not (nil? x)
+          (if-not (test-fn x)
+            (error (assoc attrs :value x))
+            x)))
+      attrs)))
 
 (defn constraint
   ([name test-fn]
@@ -207,22 +190,32 @@
      (constraint* (merge {:name name :test-fn test-fn} opts))))
 
 (def not-nil
-  (tag-validator
-   (fn not-nil [x]
-     (if-not x
-       (error {:error-id :not-nil :message "Required value missing or nil" :value x})
-       x))))
+  (let [attrs {:error-id ::not-nil
+                :message "Required value missing or nil"}]
+    (tag-constraint
+      (fn not-nil [x]
+        (if (nil? x)
+          (error (assoc attrs :value nil))
+          x))
+      attrs)))
 
 (defmacro defconstraint [vname & kvs]
   (let [vcode (keyword (str *ns*) (name vname))]
     (if (vector? (first kvs))
       (let [args (first kvs)
             test-fn (second kvs)
-            kvs (rest (rest kvs))]
-        `(defn ~vname ~args
-           (fschema.core/constraint*
-            (merge {:name ~vcode :params ~args :test-fn ~test-fn}
-                   ~(apply hash-map kvs)))))
+            kvs (rest (rest kvs))
+            attrs (apply hash-map kvs)]
+        `(def ~vname
+           (with-meta
+             (fn ~vname ~args
+               (fschema.core/constraint*
+                (merge {:name ~vcode :params ~args :test-fn ~test-fn}
+                       ~attrs)))
+             ~(merge
+               {:type ::constraint-constructor
+                :name vcode}
+               attrs))))
       `(def ~vname 
          (fschema.core/constraint*
           (merge {:name ~vcode :test-fn ~(first kvs)}
@@ -260,4 +253,57 @@
            (error errs)
            (vec xs-res)))))))
 
+(defmulti vget-in (fn [v ks] (type v)))
+
+(defconstraint any (constantly true))
+
+(defmethod vget-in :default [v ks]
+  (if (and v (not ks))
+    v
+    any))
+
+(defn vmap [x]
+  (let [vmap (fmap ->validator x)]
+    (with-meta
+      (fn map-validator
+        [obj]
+        (when obj
+          (if (map? obj)
+            (or
+             (error
+              (for [[k v] vmap]
+                (when-let [errs (error? (v (get obj k)))] 
+                  (prepend-error-paths errs k))))
+             obj)
+            (error {:error-id ::invalid-map :message "Not a valid map"}))))
+      {:type ::vmap
+       :validator-map vmap})))
+
+(def map->validator vmap)
+
+(defmethod vget-in ::vmap [v ks]
+  (let [{:keys [validator-map]} (meta v)]
+    (vget-in (get validator-map (first ks)) (next ks))))
+
+(defmethod vget-in ::vchain [v ks]
+  (let [{:keys [validators]} (meta v)]
+    (validator-chain (map #(vget-in % ks) validators))))
+
+(defn mwhere [test-fn mutator-fn]
+  (let [test-fn (if (is-validator? test-fn)
+                  (fn validator-test-fn [x] (not (error? (test-fn x))))
+                  test-fn)]
+    (fn where-mutator
+      [x]
+      (if (test-fn x)
+        (mutator-fn x)
+        x))))
+
+(defn mall [mutator-fn]
+  (fn all-mutator
+    [x]
+    (deep-fmap mutator-fn x)))
+
+(defn mall-where [test-fn mutator-fn]
+  (mall (mwhere test-fn mutator-fn)))
 
