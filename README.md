@@ -5,8 +5,6 @@ Elegant functional data validation and transformation for Clojure(script).
 fschema is intended to provide detailed error messages which can
 easily be rendered into human readable (and localizable error messages).
 
-The basic design of the library is to 
-
 ## Validator Basics
 
 A validator is any function that takes a value and returns either that
