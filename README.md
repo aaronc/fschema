@@ -7,7 +7,7 @@ easily be rendered into human readable (and localizable error messages).
 
 The basic design of the library is to 
 
-## Validation Basics
+## Validator Basics
 
 A validator is any function that takes a value and returns either that
 value or an *error* value (any object that responds truthy to the
@@ -21,6 +21,22 @@ other than the *not-nil* constraint, `(= (c nil) nil)`.
 
 Other types of validators can ve created via composition.
 
+## Mutator Basics
+
+A mutator is any function taking one argument. Mutators may also
+return *error* values (see TODO) to signal that an error has occurred.
+
+## Composing validators and mutators
+
+### defschema
+
+### vchain & mchain
+
+### validate-each & mutate-each
+
+### validate-where & mutate-where
+
+### validate-all & mutate-all
 
 ## Constraints (simple validators)
 
@@ -28,40 +44,11 @@ Other types of validators can ve created via composition.
 
 ### defconstraint
 
-## Schemas and Composite Validators
+## Errors
 
-### validator
+### error
 
-### veach
-
-### vall
-
-### vwhere
-
-### vall-where
-
-## Mutators
-
-
-## API
-
-### ->v
-
-### ->m
-
-### vseq
-
-### vmap
-
-### mseq
-
-### mmap
-
-### defconstraint
-
-### defschema
-
-## error?
+### error?
 
 ## License
 
