@@ -1,7 +1,8 @@
 (ns fschema.constraints
   (:use [fschema.core :exclude [not-nil]])
   (:refer-clojure :exclude [> < <= >= string? number?
-                            map? vector? seq re-matches]))
+                            map? vector? seq re-matches
+                            keyword? symbol?]))
 
 (def not-nil fschema.core/not-nil)
 
@@ -24,6 +25,10 @@
 (defconstraint vector? clojure.core/vector?)
 
 (defconstraint seq? clojure.core/seq)
+
+(defconstraint keyword? clojure.core/keyword?)
+
+(defconstraint symbol? clojure.core/symbol?)
 
 (defconstraint boolean? (fn [x] #{true false} x))
 

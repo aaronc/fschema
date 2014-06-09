@@ -26,9 +26,11 @@ Other types of validators can ve created via composition.
 A mutator is any function taking one argument. Mutators may also
 return *error* values (see TODO) to signal that an error has occurred.
 
-## Composing validators and mutators
+## Creating Schemas
 
 ### defschema
+
+## Composing validators and mutators
 
 ### vchain & mchain
 
@@ -38,11 +40,23 @@ return *error* values (see TODO) to signal that an error has occurred.
 
 ### validate-all & mutate-all
 
-## Constraints (simple validators)
+## Creating Constraints
 
 ### constraint
 
 ### defconstraint
+
+## Built-in Constraints
+
+### not-nil
+
+### string?, map?, seq?, number?, boolean?, keyword?, symbol?
+
+### re-matches
+
+### =, <, >, <=, >=
+
+### count=, count<, count>, count<=, count>=
 
 ## Errors
 
