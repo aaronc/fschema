@@ -5,8 +5,11 @@
 (defn tag-constraint [f attrs]
   (with-meta f (assoc attrs :type :fschema.core/constraint)))
 
-(defn constraint* [{:keys [name test-fn message params]}]
-  (let [attrs {:error-id (keyword name) :message message :params params}]
+(defn constraint* [{:keys [name test-fn] :as attrs}]
+  (let [attrs
+        (-> attrs
+            (dissoc :name :test-fn)
+            (merge {:error-id (keyword name)}))]
     (tag-constraint
       (fn test-constraint
         [x]

@@ -51,24 +51,55 @@ Constraints can be created with the `constraint` function which takes
 ### not-nil
 
 ### Type Validation
-string?, map?, seq?, number?, boolean?, keyword?, symbol?
+The `string?`, `map?`, `seq?`, `number?`, `boolean?`, `keyword?`, and
+`symbol?` constraints are available to validate the type of arguments.
+
+*Note:  these functions intentionally mirror Clojure's comparison
+operators.  The `fschema.constraints` namespace must never be loaded
+with `:use` (which is bad practice anyway).*
+
+```clojure
+user> (c/string? 7)
+[{:value 7, :error-id :fschema.constraints/string?}]
+
+user> (c/map? {:a 1})
+{:a 1}
+```
 
 ### Regex
 
 ### Numeric Range
-=, <, >, <=, >=
+The `=`, `<`, `>`, `<=`, and `>=` constraint factory functions are
+available to validate the range of numeric values.
+
+*Note:  these functions intentionally mirror Clojure's comparison
+operators.  The `fschema.constraints` namespace must never be loaded
+with `:use` (which is bad practice anyway).*
+
+```clojure
+user> ((c/> 3) 2)
+[{:value 2, :error-id :fschema.constraints/>, :params [3]}]
+
+user> ((c/> 3) 4)
+4
+```
 
 ### String and Sequence Length
 
 The `count=`, `count<`, `count>`, `count<=`, and `count>=` constraint
-constructs are available to validate the length of strings and
+factory functions are available to validate the length of strings and
 sequences.
 
 ```clojure
 user> ((c/count> 5) "abc")
-[{:value "abc", :error-id :fschema.constraints/count>, :message nil, :params [5]}]
+[{:value "abc", :error-id :fschema.constraints/count>, :params [5]}]
+
+user> ((c/count> 5) "abcefg")
+"abcefg"
+
 user> ((c/count= 2) [1 2 3])
-[{:value [1 2 3], :error-id :fschema.constraints/count=, :message nil, :params [2]}]
+[{:value [1 2 3], :error-id :fschema.constraints/count=, :params [2]}]
+
 user> ((c/count= 2) [1 2])
 [1 2]
 ```
