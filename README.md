@@ -34,11 +34,11 @@ return *error* values (see TODO) to signal that an error has occurred.
 
 ### validator & mutator
 
-### validate-each & mutate-each
+### each
 
-### validate-where & mutate-where
+### where
 
-### validate-all & mutate-all
+### all
 
 ## Creating Schemas
 
@@ -152,7 +152,15 @@ user> (c/any nil)
 nil
 ```
 
-## Errors
+## Validating Properties
+
+### fs-get-in
+
+## Inspecting schemas
+
+### inspect
+
+## Error API
 
 ### error
 
