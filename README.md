@@ -55,8 +55,8 @@ The `string?`, `map?`, `seq?`, `number?`, `boolean?`, `keyword?`, and
 `symbol?` constraints are available to validate the type of arguments.
 
 *Note:  these functions intentionally mirror Clojure's comparison
-operators.  The `fschema.constraints` namespace must never be loaded
-with `:use` (which is bad practice anyway).*
+operators.  The *`fschema.constraints`* namespace must never be loaded
+with *`:use`* (which is bad practice anyway).*
 
 ```clojure
 user> (c/string? 7)
@@ -70,6 +70,10 @@ user> (c/map? {:a 1})
 The `re-matches` constraint factory function can be used to match
 strings against regular expressions. (*Note: the *`string?`* constraint is
 invoked implicity when `re-matches` is used.*)
+
+*Note: this function intentionally mirror Clojure's comparison
+operators.  The *`fschema.constraints`* namespace must never be loaded
+with *`:use`* (which is bad practice anyway).*
 
 ```clojure
 user> ((c/re-matches #"a.\*z") "abx")
@@ -86,7 +90,7 @@ user> ((c/re-matches #"a.\*z") "abcz")
 The `=`, `<`, `>`, `<=`, and `>=` constraint constructors are
 available to validate the range of numeric values. (*Note: the*
 `number?` *constraint is invoked implicitly when any of the numeric
-range functions are used.*"
+range functions are used.*)
 
 *Note:  these functions intentionally mirror Clojure's comparison
 operators.  The *`fschema.constraints`* namespace must never be loaded
