@@ -68,8 +68,8 @@ user> (c/map? {:a 1})
 
 ### Regex
 The `re-matches` constraint factory function can be used to match
-strings against regular expressions. (Note: the `string?` constraint is
-invoked implicity when `re-matches` is used.)
+strings against regular expressions. (*Note: the *`string?`* constraint is
+invoked implicity when `re-matches` is used.*)
 
 ```clojure
 user> ((c/re-matches #"a.\*z") "abx")
@@ -83,14 +83,14 @@ user> ((c/re-matches #"a.\*z") "abcz")
 ```
 
 ### Numeric Range
-The `=`, `<`, `>`, `<=`, and `>=` constraint factory functions are
-available to validate the range of numeric values. (Note: the
-`number?` constraint is invoked implicitly when any of the numeric
-range functions are used."
+The `=`, `<`, `>`, `<=`, and `>=` constraint constructors are
+available to validate the range of numeric values. (*Note: the*
+`number?` *constraint is invoked implicitly when any of the numeric
+range functions are used.*"
 
 *Note:  these functions intentionally mirror Clojure's comparison
-operators.  The `fschema.constraints` namespace must never be loaded
-with `:use` (which is bad practice anyway).*
+operators.  The *`fschema.constraints`* namespace must never be loaded
+with *`:use`* (which is bad practice anyway).*
 
 ```clojure
 user> ((c/> 3) 2)
@@ -106,7 +106,7 @@ user> ((c/> 3) 4)
 ### String and Sequence Length
 
 The `count=`, `count<`, `count>`, `count<=`, and `count>=` constraint
-factory functions are available to validate the length of strings and
+constructors are available to validate the length of strings and
 sequences.
 
 ```clojure
