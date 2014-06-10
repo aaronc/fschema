@@ -1,10 +1,11 @@
 (ns fschema.core-test
   (:require [clojure.test :refer :all]
             [fschema.core :refer :all]
-            [fschema.constraints :as v]))
+            [fschema.constraints :as v]
+            [criterium.core :as crit]))
 
 (defschema S1
-  :a not-nil
+  :a v/not-nil
   :b v/number?
   :c [v/not-nil v/string? (v/re-matches #"a.*c")]
   :d [v/not-nil (veach v/number? (v/> 5))])
@@ -40,4 +41,35 @@
   (test-read-mutator {:a [1 "x"]}))
 
 
+(def veach1 (veach (v/> 5) (v/< 10)))
 
+(def meach1 (meach (v/> 5) (v/< 10)))
+
+(def v1 [6 7 8 9])
+
+(def v2 [14 3 8 12 5])
+
+(def bench1 []
+  )
+
+(def v1 (->validator
+         {:a v/not-nil
+          :b v/number?
+          :c [v/not-nil v/string? (v/re-matches #"a.*c")]
+          :d [v/not-nil (veach v/number? (v/> 5))]}))
+
+(def m1 (->mutator
+         {:a v/not-nil
+          :b v/number?
+          :c [v/not-nil v/string? (v/re-matches #"a.*c")]
+          :d [v/not-nil (veach v/number? (v/> 5))]}))
+
+(def d1 {:a 5 :c "abc" :d [6 7 8]})
+
+;; (defn bench2 []
+;;   (time
+;;    (dotimes [i 100000]
+;;      (v1 d1)))
+;;   (time
+;;    (dotimes [i 100000]
+;;      (m1 d1))))

@@ -24,6 +24,10 @@
 
 (derive ::vchain ::mchain)
 
+(derive ::veach ::validator)
+
+(derive ::meach ::mutator)
+
 (defmulti deep-fmap
   "Applies function f to each item in the data structure s and returns
    a structure of the same kind."
@@ -167,19 +171,24 @@
 
 (defmacro defschema [name & kvs]
   `(def ~name (fschema.core/->validator
-               fschema.constraintse/not-nil
+               fschema.core.constraint/not-nil
                ~(apply hash-map kvs))))
 
 (defn veach [& fs]
-  (let [f (apply ->validator fs)]
-    (tag-validator
+  (let [vf (apply ->validator fs)]
+    (with-meta
      (fn validate-each [xs]
-       (error
-        (map-indexed
-         (fn [idx x]
-           (when-let [err (error? (f x))]
-             (prepend-error-paths err idx)))
-         xs))))))
+       (let [xs-res
+             (map-indexed
+              (fn [idx x]
+                (when-let [err (error? (vf x))]
+                  (prepend-error-paths err idx)))
+              xs)]
+         (if-let [errs (seq (filter error? xs-res))]
+           (error errs)
+           xs)))
+     {:type ::veach
+      :validator vf})))
 
 (defn meach [& fs]
   (let [f (apply ->mutator fs)]
@@ -195,7 +204,9 @@
               xs)]
          (if-let [errs (seq (filter error? xs-res))]
            (error errs)
-           (vec xs-res)))))))
+           (if (= xs-res xs)
+             xs
+             (vec xs-res))))))))
 
 (defmulti vget-in (fn [v ks] (type v)))
 

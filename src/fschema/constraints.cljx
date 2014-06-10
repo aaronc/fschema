@@ -6,15 +6,7 @@
                             map? vector? seq re-matches
                             keyword? symbol?]))
 
-(def not-nil
-  (let [attrs {:error-id ::not-nil
-                :message "Required value missing or nil"}]
-    (tag-constraint
-      (fn not-nil [x]
-        (if (nil? x)
-          (error (assoc attrs :value nil))
-          x))
-      attrs)))
+(def not-nil fschema.core.constraint/not-nil)
 
 (defconstraint any identity)
 

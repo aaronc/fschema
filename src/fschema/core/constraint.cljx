@@ -20,10 +20,12 @@
                x)))
          attrs)]
     (if pre-constraint
-      (fn test-pre-constraint [x]
-        (if-let [err (error? (pre-constraint x))]
-          err
-          (cstrnt x)))
+      (tag-constraint
+       (fn test-pre-constraint [x]
+         (if-let [err (error? (pre-constraint x))]
+           err
+           (cstrnt x)))
+       attrs)
       cstrnt)))
 
 (defn constraint
@@ -51,3 +53,13 @@
          (fschema.core.constraint/constraint*
           (merge {:name ~vcode :test-fn ~(first kvs)}
                  ~(apply hash-map (rest kvs))))))))
+
+(def not-nil
+  (let [attrs {:error-id :fschema.constraints/not-nil
+                :message "Required value missing or nil"}]
+    (tag-constraint
+      (fn not-nil [x]
+        (if (nil? x)
+          (error (assoc attrs :value nil))
+          x))
+      attrs)))
