@@ -21,10 +21,9 @@
          attrs)]
     (if pre-constraint
       (fn test-pre-constraint [x]
-        (fn [x]
-          (if-let [err (error? (pre-constraint x))]
-            err
-            (cstrnt x))))
+        (if-let [err (error? (pre-constraint x))]
+          err
+          (cstrnt x)))
       cstrnt)))
 
 (defn constraint

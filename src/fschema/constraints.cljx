@@ -18,14 +18,6 @@
 
 (defconstraint any identity)
 
-(defconstraint > [x] (fn [y] (clojure.core/> y x)))
-
-(defconstraint < [x] (fn [y] (clojure.core/< y x)))
-
-(defconstraint >= [x] (fn [y] (clojure.core/>= y x)))
-
-(defconstraint <= [x] (fn [y] (clojure.core/<= y x)))
-
 (defconstraint string? clojure.core/string?)
 
 (defconstraint number? clojure.core/number?)
@@ -42,14 +34,25 @@
 
 (defconstraint boolean? (fn [x] #{true false} x))
 
-(defn re-matches
-  [r]
-  (let [c (constraint :re-matches (fn [x] (clojure.core/re-matches r x))
-                      :params [r])]
-    (fn [x]
-      (if-let [err (error? (string? x))]
-        err
-        (c x)))))
+(defconstraint = [x] (fn [y] (clojure.core/= y x))
+  :pre-constraint number?)
+
+(defconstraint > [x] (fn [y] (clojure.core/> y x))
+  :pre-constraint number?)
+
+(defconstraint < [x] (fn [y] (clojure.core/< y x))
+  :pre-constraint number?)
+
+(defconstraint >= [x] (fn [y] (clojure.core/>= y x))
+  :pre-constraint number?)
+
+(defconstraint <= [x] (fn [y] (clojure.core/<= y x))
+  :pre-constraint number?)
+
+
+(defconstraint re-matches [r] (fn [x] (clojure.core/re-matches r x))
+  :pre-constraint string?)
+
 
 (defconstraint count= [n] (fn [coll] (clojure.core/= (count coll) n)))
 
