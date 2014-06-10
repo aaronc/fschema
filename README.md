@@ -5,7 +5,15 @@ Elegant functional data validation and transformation for Clojure(script).
 fschema is intended to provide detailed error messages which can
 easily be rendered into human readable (and localizable error messages).
 
-## Validator Basics
+## Getting Started
+
+Add the following dependenct to your `project.clj`:
+
+```
+[fschema "0.2.0"]
+```
+
+## Validator & Mutator Basics
 
 A validator is any function that takes a value and returns either that
 value or an *error* value (any object that responds truthy to the
@@ -19,14 +27,8 @@ other than the *not-nil* constraint, `(= (c nil) nil)`.
 
 Other types of validators can ve created via composition.
 
-## Mutator Basics
-
 A mutator is any function taking one argument. Mutators may also
 return *error* values (see TODO) to signal that an error has occurred.
-
-## Creating Schemas
-
-### defschema
 
 ## Composing validators and mutators
 
@@ -37,6 +39,10 @@ return *error* values (see TODO) to signal that an error has occurred.
 ### validate-where & mutate-where
 
 ### validate-all & mutate-all
+
+## Creating Schemas
+
+### defschema
 
 ## Creating Constraints
 
