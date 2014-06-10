@@ -50,6 +50,11 @@ Constraints can be created with the `constraint` function which takes
 
 ### not-nil
 
+The `not-nil` constraint is to be used whenever it is necessary to
+ensure that a value is not nil. *All other constraints will return
+*`nil`* when passed a *`nil`* value.
+
+
 ### Type
 The `string?`, `map?`, `seq?`, `number?`, `boolean?`, `keyword?`, and
 `symbol?` constraints are available to validate the type of arguments.
