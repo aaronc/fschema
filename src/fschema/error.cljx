@@ -1,5 +1,11 @@
 (ns fschema.error)
 
+;; The core function in fschema is the simple error? function which
+;; determines if a given value represents an error object. An error object
+;; is any object that has the :error key set in its meta map. Errors should
+;; generally be created with the error function which will aggregate multiple
+;; error maps into a vector of error maps.
+
 (defn error?
   "Determines whether x represents an error. Any object with the :error key set
    in its meta map is considered to be an error. Returns nil if the object does

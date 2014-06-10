@@ -1,10 +1,22 @@
 (ns fschema.constraints
-  (:use [fschema.core :exclude [not-nil]])
+  (:require
+   [fschema.core.constraint :refer [tag-constraint defconstraint]]
+   [fschema.error :refer [error]])
   (:refer-clojure :exclude [> < <= >= string? number?
                             map? vector? seq re-matches
                             keyword? symbol?]))
 
-(def not-nil fschema.core/not-nil)
+(def not-nil
+  (let [attrs {:error-id ::not-nil
+                :message "Required value missing or nil"}]
+    (tag-constraint
+      (fn not-nil [x]
+        (if (nil? x)
+          (error (assoc attrs :value nil))
+          x))
+      attrs)))
+
+(defconstraint any identity)
 
 (defconstraint > [x] (fn [y] (clojure.core/> y x)))
 
@@ -32,12 +44,12 @@
 
 (defconstraint boolean? (fn [x] #{true false} x))
 
-(defconstraint count= [n] (fn [coll] (= (count coll) n)))
+(defconstraint count= [n] (fn [coll] (clojure.core/= (count coll) n)))
 
-(defconstraint count> [n] (fn [coll] (> (count coll) n)))
+(defconstraint count> [n] (fn [coll] (clojure.core/> (count coll) n)))
 
-(defconstraint count< [n] (fn [coll] (< (count coll) n)))
+(defconstraint count< [n] (fn [coll] (clojure.core/< (count coll) n)))
 
-(defconstraint count<= [n] (fn [coll] (<= (count coll) n)))
+(defconstraint count<= [n] (fn [coll] (clojure.core/<= (count coll) n)))
 
-(defconstraint count>= [n] (fn [coll] (>= (count coll) n)))
+(defconstraint count>= [n] (fn [coll] (clojure.core/>= (count coll) n)))

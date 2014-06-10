@@ -30,7 +30,7 @@ return *error* values (see TODO) to signal that an error has occurred.
 
 ## Composing validators and mutators
 
-### vchain & mchain
+### validator & mutator
 
 ### validate-each & mutate-each
 
@@ -42,19 +42,42 @@ return *error* values (see TODO) to signal that an error has occurred.
 
 ### constraint
 
+Constraints can be created with the `constraint` function which takes 
+
 ### defconstraint
 
 ## Built-in Constraints
 
 ### not-nil
 
-### string?, map?, seq?, number?, boolean?, keyword?, symbol?
+### Type Validation
+string?, map?, seq?, number?, boolean?, keyword?, symbol?
 
-### re-matches
+### Regex
 
-### =, <, >, <=, >=
+### Numeric Range
+=, <, >, <=, >=
 
-### count=, count<, count>, count<=, count>=
+### String and Sequence Length
+
+The `count=`, `count<`, `count>`, `count<=`, and `count>=` constraint
+constructs are available to validate the length of strings and
+sequences.
+
+```clojure
+user> ((c/count> 5) "abc")
+[{:value "abc", :error-id :fschema.constraints/count>, :message nil, :params [5]}]
+user> ((c/count= 2) [1 2 3])
+[{:value [1 2 3], :error-id :fschema.constraints/count=, :message nil, :params [2]}]
+user> ((c/count= 2) [1 2])
+[1 2]
+```
+
+
+### any
+
+The `any` validator always validates successfully. It is the
+equivalent of 
 
 ## Errors
 
