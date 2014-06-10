@@ -5,19 +5,27 @@
 (defn tag-constraint [f attrs]
   (with-meta f (assoc attrs :type :fschema.core/constraint)))
 
-(defn constraint* [{:keys [name test-fn] :as attrs}]
+(defn constraint* [{:keys [name test-fn pre-constraint] :as attrs}]
   (let [attrs
         (-> attrs
-            (dissoc :name :test-fn)
-            (merge {:error-id (keyword name)}))]
-    (tag-constraint
-      (fn test-constraint
-        [x]
-        (when-not (nil? x)
-          (if-not (test-fn x)
-            (error (assoc attrs :value x))
-            x)))
-      attrs)))
+            (dissoc :name :test-fn :pre-constraint)
+            (merge {:error-id (keyword name)}))
+
+        cstrnt
+        (tag-constraint
+         (fn test-constraint [x]
+           (when-not (nil? x)
+             (if-not (test-fn x)
+               (error (assoc attrs :value x))
+               x)))
+         attrs)]
+    (if pre-constraint
+      (fn test-pre-constraint [x]
+        (fn [x]
+          (if-let [err (error? (pre-constraint x))]
+            err
+            (cstrnt x))))
+      cstrnt)))
 
 (defn constraint
   [name test-fn & {:as opts}]

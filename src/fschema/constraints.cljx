@@ -1,7 +1,7 @@
 (ns fschema.constraints
   (:require
-   [fschema.core.constraint :refer [tag-constraint defconstraint]]
-   [fschema.error :refer [error]])
+   [fschema.core.constraint :refer [tag-constraint defconstraint constraint]]
+   [fschema.error :refer [error error?]])
   (:refer-clojure :exclude [> < <= >= string? number?
                             map? vector? seq re-matches
                             keyword? symbol?]))
@@ -26,8 +26,6 @@
 
 (defconstraint <= [x] (fn [y] (clojure.core/<= y x)))
 
-(defconstraint re-matches [r] (fn [x] (clojure.core/re-matches r x)))
-
 (defconstraint string? clojure.core/string?)
 
 (defconstraint number? clojure.core/number?)
@@ -43,6 +41,15 @@
 (defconstraint symbol? clojure.core/symbol?)
 
 (defconstraint boolean? (fn [x] #{true false} x))
+
+(defn re-matches
+  [r]
+  (let [c (constraint :re-matches (fn [x] (clojure.core/re-matches r x))
+                      :params [r])]
+    (fn [x]
+      (if-let [err (error? (string? x))]
+        err
+        (c x)))))
 
 (defconstraint count= [n] (fn [coll] (clojure.core/= (count coll) n)))
 

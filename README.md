@@ -50,7 +50,7 @@ Constraints can be created with the `constraint` function which takes
 
 ### not-nil
 
-### Type Validation
+### Type
 The `string?`, `map?`, `seq?`, `number?`, `boolean?`, `keyword?`, and
 `symbol?` constraints are available to validate the type of arguments.
 
@@ -67,6 +67,20 @@ user> (c/map? {:a 1})
 ```
 
 ### Regex
+The `re-matches` constraint factory function can be used to match
+strings against regular expressions. (Note: the `string?` validator is
+called implicity when `re-matches` is used.)
+
+```clojure
+user> ((c/re-matches #"a.\*z") "abx")
+[{:value "abx", :error-id :re-matches, :params [#"a.\*z"]}]
+
+user> ((c/re-matches #"a.\*z") 4)
+[{:value 4, :error-id :fschema.constraints/string?}]
+
+user> ((c/re-matches #"a.\*z") "abcz")
+"abcz"
+```
 
 ### Numeric Range
 The `=`, `<`, `>`, `<=`, and `>=` constraint factory functions are
@@ -104,11 +118,10 @@ user> ((c/count= 2) [1 2])
 [1 2]
 ```
 
-
 ### any
 
-The `any` validator always validates successfully. It is the
-equivalent of 
+The `any` validator always validates successfully. It is essentially
+the `identity` function marked as a validator.
 
 ## Errors
 
