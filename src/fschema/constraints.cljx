@@ -22,6 +22,8 @@
 
 (defconstraint number? clojure.core/number?)
 
+(defconstraint integer? clojure.core/integer?)
+
 (defconstraint map? clojure.core/map?)
 
 (defconstraint vector? clojure.core/vector?)

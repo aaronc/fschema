@@ -56,8 +56,9 @@ ensure that a value is not nil. *All other constraints will return
 
 
 ### Type checking
-The `string?`, `map?`, `seq?`, `number?`, `boolean?`, `keyword?`, and
-`symbol?` constraints are available to validate the type of arguments.
+The `string?`, `map?`, `seq?`, `number?`, `integer?`, `boolean?`,
+`keyword?`, and `symbol?` constraints are available to validate the
+type of arguments.
 
 *Note:  these functions intentionally mirror Clojure's type checking
 functions.  The *`fschema.constraints`* namespace must never be loaded
@@ -136,6 +137,14 @@ user> ((c/count= 2) [1 2])
 
 The `any` validator always validates successfully. It is essentially
 the `identity` function marked as a validator.
+
+```clojure
+user> (c/any 2362)
+2362
+
+user> (c/any nil)
+nil
+```
 
 ## Errors
 
