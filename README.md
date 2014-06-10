@@ -55,12 +55,12 @@ ensure that a value is not nil. *All other constraints will return
 *`nil`* when passed a *`nil`* value.
 
 
-### Type
+### Type checking
 The `string?`, `map?`, `seq?`, `number?`, `boolean?`, `keyword?`, and
 `symbol?` constraints are available to validate the type of arguments.
 
-*Note:  these functions intentionally mirror Clojure's comparison
-operators.  The *`fschema.constraints`* namespace must never be loaded
+*Note:  these functions intentionally mirror Clojure's type checking
+functions.  The *`fschema.constraints`* namespace must never be loaded
 with *`:use`* (which is bad practice anyway).*
 
 ```clojure
@@ -76,8 +76,8 @@ The `re-matches` constraint factory function can be used to match
 strings against regular expressions. (*Note: the *`string?`* constraint is
 invoked implicity when `re-matches` is used.*)
 
-*Note: this function intentionally mirror Clojure's comparison
-operators.  The *`fschema.constraints`* namespace must never be loaded
+*Note: this function intentionally mirrors Clojure's *`re-matches`*
+function.  The *`fschema.constraints`* namespace must never be loaded
 with *`:use`* (which is bad practice anyway).*
 
 ```clojure
