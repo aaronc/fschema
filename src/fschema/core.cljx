@@ -6,91 +6,59 @@
    [fschema.core.constraint]))
 
 ;; Type hierachy
+(derive ::constraint ::fschema-fn)
 
-;; All validators are simply mutators that don't mutate anything
-(derive ::validator ::mutator)
+(derive ::fschema-map ::fschema-fn)
 
-(derive ::constraint ::validator)
+(derive ::fschema-chain ::fschema-fn)
 
-(derive ::map-validator ::validator)
+(derive ::each ::fschema-fn)
 
-(derive ::map-mutator ::mutator)
+(derive ::where ::fschema-fn)
 
-(derive ::map-validator ::map-mutator)
+(derive ::all ::fschema-fn)
 
-(derive ::vchain ::validator)
-
-(derive ::mchain ::mutator)
-
-(derive ::vchain ::mchain)
-
-(derive ::veach ::validator)
-
-(derive ::meach ::mutator)
-
-(defmulti deep-fmap
+(defmulti deep-fschema-fn
   "Applies function f to each item in the data structure s and returns
    a structure of the same kind."
    {:arglists '([f s])}
    (fn [f s] (type s)))
 
-(defmethod deep-fmap :default [f v] (f v))
+(defmethod deep-fschema-fn :default [f v] (f v))
 
-(defmethod deep-fmap clojure.lang.IPersistentList
+(defmethod deep-fschema-fn clojure.lang.IPersistentList
   [f v]
-  (map (partial deep-fmap f) v))
+  (map (partial deep-fschema-fn f) v))
 
-(defmethod deep-fmap clojure.lang.IPersistentVector
+(defmethod deep-fschema-fn clojure.lang.IPersistentVector
   [f v]
-  (into (empty v) (map (partial deep-fmap f) v)))
+  (into (empty v) (map (partial deep-fschema-fn f) v)))
 
-(defmethod deep-fmap clojure.lang.IPersistentMap
+(defmethod deep-fschema-fn clojure.lang.IPersistentMap
   [f m]
-  (into (empty m) (for [[k v] m] [k (deep-fmap f v)])))
+  (into (empty m) (for [[k v] m] [k (deep-fschema-fn f v)])))
 
-(defmethod deep-fmap clojure.lang.IPersistentSet
+(defmethod deep-fschema-fn clojure.lang.IPersistentSet
   [f s]
-  (into (empty s) (map (partial deep-fmap f) s)))
+  (into (empty s) (map (partial deep-fschema-fn f) s)))
 
-(defn tag-validator [x]
-  (with-meta
-    x
-    (merge (meta x) {:type ::validator})))
+(declare fschema)
 
-(defn is-validator? [x] (isa? (type x) ::validator))
-
-(defn tag-mutator [x]
-  (with-meta
-    x
-    (merge (meta x) {::mutator true})))
-
-(defn is-mutator? [x] (::mutator (meta x)))
-
-(declare ->mutator)
-
-(declare ->validator)
-
-(defn mutator->validator [mutator]
-  (tag-validator
-   (fn [x]
-     (let [res (mutator x)]
-       (if (error? res)
-         res
-         x)))))
-
-(defn- mutator-chain [mutators]
-  (if (= 1 (count mutators))
-    (first mutators)
-    (tag-mutator
-     (fn mutator-chain [x]
-       (reduce (fn [x m] (if (error? x) x (m x))) x mutators)))))
-
-(defn map->mutator [x]
-  (let [mutator-map (fmap ->mutator x)]
+(defn- make-fschema-chain [fns]
+  (if (= 1 (count fns))
+    (first fns)
     (with-meta
-      (->mutator
+     (fn fschema-chain [x]
+       (reduce (fn [x m] (if (error? x) x (m x))) x fns))
+     {:type ::fschema-chain
+      :fns fns})))
+
+(defn- make-fschema-map [x]
+  (let [fn-map (fmap fschema x)]
+    (with-meta
+      (fschema
        c/map?
-       (fn map-mutator [obj]
+       (fn fschema-map [obj]
          (let [mutations
                (doall
                 (remove
@@ -100,7 +68,7 @@
                               mv (m v)]
                           (when-not (= v mv)
                             [k mv])))
-                      mutator-map)))
+                      fn-map)))
                errs
                (error
                 (map (fn [[k v]]
@@ -109,90 +77,22 @@
                      mutations))]
            (or errs
                (reduce (fn [obj [k v]] (assoc obj k v)) obj mutations)))))
-      {:type ::map-mutator :fn-map mutator-map})))
+      {:type ::fschema-map :fn-map fn-map})))
 
-(defn ->mutator [& args]
+(defn fschema [& args]
   (mutator-chain
    (for [x args]
      (cond
-      (is-mutator? x) x
-      (is-validator? x) x
-      (fn? x) (tag-mutator (fn [v] (when-not (nil? v) (x v))))
+      (fn? x) x
       (map? x) (map->mutator x)
-      (seq x) (apply ->mutator x)
-      :else (throw (ex-info (str "Don't know how to coerce " x " to mutator")
+      (seq x) (apply fschema x)
+      :else (throw (ex-info (str "Don't know how to coerce " x " to an fschema fn")
                             {:error-id ::mutator-definition-error
                              :x x :args args}))))))
 
-(defn- validator-chain [validators]
-  (if (= 1 (count validators))
-    (first validators)
-    (with-meta
-      (fn validator-chain [x]
-        (or
-         (first (drop-while (comp not error?) (map (fn [v] (v x)) validators)))
-         x))
-      {:type ::vchain
-       :validators validators})))
-
-(defn- take-path-step [{:keys [path] :as opts}]
-  (if path
-    [(first path) (update-in opts [:path] next)]
-    [nil opts]))
-
-(defn- map->validator [x]
-  (let [vmap (fmap ->validator x)]
-    (tag-validator
-     (with-meta
-       (fn map-validator
-         [obj]
-         (when obj
-           (if (map? obj)
-             (or
-              (error
-               (for [[k v] vmap]
-                 (when-let [errs (error? (v (get obj k)))] 
-                   (prepend-error-paths errs k))))
-              obj)
-             (error {:error-id ::invalid-map :message "Not a valid map"}))))
-       {::map-validator vmap}))))
-
-(defn ->validator [& args]
-  (validator-chain
-   (for [x args]
-     (cond
-      (is-validator? x) x
-      (is-mutator? x) (mutator->validator x)
-      (map? x) (map->validator x)
-      (seq x) (apply ->validator x)
-      :else (throw (ex-info (str "Don't know how to coerce " x " to validator")
-                            {:error-id ::validator-definition-error
-                             :x x :args args}))))))
-
-(defmacro defschema [name & kvs]
-  `(def ~name (fschema.core/->validator
-               fschema.core.constraint/not-nil
-               ~(apply hash-map kvs))))
-
-(defn veach [& fs]
-  (let [vf (apply ->validator fs)]
-    (with-meta
-     (fn validate-each [xs]
-       (let [xs-res
-             (map-indexed
-              (fn [idx x]
-                (when-let [err (error? (vf x))]
-                  (prepend-error-paths err idx)))
-              xs)]
-         (if-let [errs (seq (filter error? xs-res))]
-           (error errs)
-           xs)))
-     {:type ::veach
-      :validator vf})))
-
-(defn meach [& fs]
+(defn each [& fs]
   (let [f (apply ->mutator fs)]
-    (tag-mutator
+    (with-meta
      (fn mutate-each [xs]
        (let [xs-res
              (map-indexed
@@ -206,58 +106,56 @@
            (error errs)
            (if (= xs-res xs)
              xs
-             (vec xs-res))))))))
+             (vec xs-res)))))
+     {:type ::each
+      :func f})))
 
-(defmulti vget-in (fn [v ks] (type v)))
-
-
-(defmethod vget-in :default [v ks]
-  (if (and v (not ks))
-    v
-    c/any))
-
-(defn vmap [x]
-  (let [vmap (fmap ->validator x)]
+(defn where [where-fn f]
+  (let [where-fn (if (is-validator? where-fn)
+                  (fn validator-where-fn [x] (not (error? (where-fn x))))
+                  where-fn)]
     (with-meta
-      (fn map-validator
-        [obj]
-        (when obj
-          (if (map? obj)
-            (or
-             (error
-              (for [[k v] vmap]
-                (when-let [errs (error? (v (get obj k)))] 
-                  (prepend-error-paths errs k))))
-             obj)
-            (error {:error-id ::invalid-map :message "Not a valid map"}))))
-      {:type ::map-validator
-       :validator-map vmap})))
+      (fn where-mutator
+        [x]
+        (if (where-fn x)
+          (f x)
+          x))
+      {:type ::where :where-fn where-fn :f f})))
 
-(def map->validator vmap)
-
-(defmethod vget-in ::map-mutator [v ks]
-  (let [{:keys [fn-map]} (meta v)]
-    (vget-in (get fn-map (first ks)) (next ks))))
-
-(defmethod vget-in ::vchain [v ks]
-  (let [{:keys [validators]} (meta v)]
-    (validator-chain (map #(vget-in % ks) validators))))
-
-(defn mwhere [test-fn mutator-fn]
-  (let [test-fn (if (is-validator? test-fn)
-                  (fn validator-test-fn [x] (not (error? (test-fn x))))
-                  test-fn)]
-    (fn where-mutator
-      [x]
-      (if (test-fn x)
-        (mutator-fn x)
-        x))))
-
-(defn mall [mutator-fn]
+(defn all [mutator-fn]
   (fn all-mutator
     [x]
     (deep-fmap mutator-fn x)))
 
-(defn mall-where [test-fn mutator-fn]
-  (mall (mwhere test-fn mutator-fn)))
+;; Decomposing Schemas for Property Paths
 
+(defmulti for-path (fn [v ks] (type v)))
+
+(defmethod for-path :default [v ks]
+  (if (and v (not ks))
+    v
+    c/any))
+
+(defmethod for-path ::fschema-map [v ks]
+  (let [{:keys [fn-map]} (meta v)]
+    (for-path (get fn-map (first ks)) (next ks))))
+
+(defmethod for-path ::fschema-chain [v ks]
+  (let [{:keys [validators]} (meta v)]
+    (validator-chain (map #(for-path % ks) validators))))
+
+;; (defmethod for-path ::each [v ks]
+;;   (let [{:keys [f]} (meta v)]
+;;     (validator-chain (map #(for-path % ks) validators))))
+
+;; Introspection
+
+(defmulti inspect type)
+
+(defmethod inspect :default [f] f)
+
+(defmethod inspect ::fschema-fn [f] (meta f))
+
+(defmethod inspect ::each [f] (update-in (meta f) [:validator] inspect))
+
+(defmethod inspect ::chain-fn [f] (update-in (meta f) [:validators] (partial map inspect)))

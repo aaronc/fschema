@@ -16,4 +16,5 @@
                    [criterium "0.4.3"]]
     :plugins [[com.keminglabs/cljx "0.4.0"]
     ;          [com.cemerick/austin "0.1.4"]
-              ]}})
+              ]
+    :jvm-opts ^:replace []}})

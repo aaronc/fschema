@@ -12,13 +12,13 @@
 
 (deftest test-schema
   (is (= (S1 nil)
-         [{:error-id :fschema.core/not-nil, :message "Required value missing or nil", :value nil}]))
+         [{:error-id :fschema.constraints/not-nil, :message "Required value missing or nil", :value nil}]))
   (is (= (apply hash-set (S1 {}))
-         #{{:path [:a], :error-id :fschema.core/not-nil,
+         #{{:path [:a], :error-id :fschema.constraints/not-nil,
             :message "Required value missing or nil", :value nil}
-           {:path [:c], :error-id :fschema.core/not-nil,
+           {:path [:c], :error-id :fschema.constraints/not-nil,
             :message "Required value missing or nil", :value nil}
-           {:path [:d], :error-id :fschema.core/not-nil,
+           {:path [:d], :error-id :fschema.constraints/not-nil,
             :message "Required value missing or nil", :value nil}}))
   (let [v {:a 5 :c "abc" :d [6 7 8]}]
     (is (identical? (S1 v) v))))
@@ -45,9 +45,9 @@
 
 (def meach1 (meach (v/> 5) (v/< 10)))
 
-(def v1 [6 7 8 9])
+(def d1 [6 7 8 9])
 
-(def v2 [14 3 8 12 5])
+(def d2 [14 3 8 12 5])
 
 (def bench1 []
   )
@@ -64,7 +64,9 @@
           :c [v/not-nil v/string? (v/re-matches #"a.*c")]
           :d [v/not-nil (veach v/number? (v/> 5))]}))
 
-(def d1 {:a 5 :c "abc" :d [6 7 8]})
+(def d3 {:a 5 :c "abc" :d [6 7 8]})
+(def d4 {:e 5 :c "abcd" :d [6 7 8 3]})
+
 
 ;; (defn bench2 []
 ;;   (time

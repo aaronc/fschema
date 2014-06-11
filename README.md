@@ -32,17 +32,11 @@ return *error* values (see TODO) to signal that an error has occurred.
 
 ## Composing validators and mutators
 
-### validator & mutator
+### fschema
 
 ### each
 
 ### where
-
-### all
-
-## Creating Schemas
-
-### defschema
 
 ## Creating Constraints
 
@@ -154,7 +148,7 @@ nil
 
 ## Validating Properties
 
-### fs-get-in
+### for-path
 
 ## Inspecting schemas
 

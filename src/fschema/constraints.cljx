@@ -4,7 +4,7 @@
    [fschema.error :refer [error error?]])
   (:refer-clojure :exclude [> < <= >= string? number?
                             map? vector? seq re-matches
-                            keyword? symbol?]))
+                            keyword? symbol? set?]))
 
 (def not-nil fschema.core.constraint/not-nil)
 
@@ -25,6 +25,8 @@
 (defconstraint keyword? clojure.core/keyword?)
 
 (defconstraint symbol? clojure.core/symbol?)
+
+(defconstraint set? clojure.core/set?)
 
 (defconstraint boolean? (fn [x] #{true false} x))
 
