@@ -72,11 +72,13 @@ values (`error` values are marked using Clojure's metadata facilities).
 ### Constraints
 
 Constraints are the simplest validators. Constraints can be
-created using the `constraint` function or the `defconstraint` macro.
+created using the `constraint` function or the `defconstraint` macro
+(see [Creating Constraints](#creating-constraints)).
 fschema includes a number of built-in constraints.
 
-Constraints return errors detailed error maps regarding the error that
-occurred. fschema's builtin constraints intentionally mirror Clojure's
+Constraints return detailed error maps including the `:error-id` and
+failing `value` so that they can be used to created localizable error
+messages. fschema's builtin constraints intentionally mirror Clojure's
 basic functions so they are easy to remember. Because of this the
 `fschema.constraints` namespace must always be `require`'d using an
 `:as` alias.
@@ -93,24 +95,28 @@ success
 
 ### Constraints and nil values
 
-Constraints have the following property: for every constraint *c*
-other than the `not-nil` constraint, `(= (c nil) nil)`. That is, every
-constraint when passed a `nil` value will silently fail and return
-`nil` instead of an *error* value. To return an *error* when `nil` is
-passed in, use the `not-nill` constraint. This is to facilitate the
-functional composability of constraints.
-Other validators can be creating by composing constraints using the
-`schema-fn`, `each` and `where` functions.
+For every constraint other than the `not-nil` constraint, the
+constraint will not return an `error` when passed a `nil` value, but
+instead return `nil`. This is to facilitate the
+functional composability of constraints. To return an `error` when `nil` is
+passed in, the `not-nil` constraint must be used. 
 
-
-### Mutators
-
-A mutator is any function taking one argument. Mutators may also
-return *error* values (see TODO) to signal that an error has occurred.
+```clojure
+user> (c/string? nil)
+nil
+user> (c/not-nil nil)
+[{:value nil, :error-id :fschema.constraints/not-nil, :message "Required value missing or nil"}]
+```
 
 ## Composing validators and mutators
 
+To make things more interesting we must compose constraints and
+mutators (any function taking a single argument) using the
+`schema-fn`, `each` and `where` functions.
+
 ### schema-fn
+
+`schema-fn` is the main function 
 
 ### each
 
