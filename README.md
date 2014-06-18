@@ -69,19 +69,27 @@ different places within execution (for instance on different branches
 of the same map) and to easily differentiate them from other valid
 values (`error` values are marked using Clojure's metadata facilities).
 
+### Constraints
 
-### Validators and Constraints
+Constraints are the simplest validators. Constraints can be
+created using the `constraint` function or the `defconstraint` macro.
+fschema includes a number of built-in constraints.
 
-A validator is any function that takes a value and returns either the
-value it was passed (for successful validation) or an *error* value.
-An error value is any object that returns a truthy (not `nil` or
-`false`) reponse to the `error?` function.
+Constraints return errors detailed error maps regarding the error that
+occurred. fschema's builtin constraints intentionally mirror Clojure's
+basic functions so they are easy to remember. Because of this the
+`fschema.constraints` namespace must always be `require`'d using an
+`:as` alias.
 
-The simplest type of validator is a constraint. Constraints can be
-created with the `constraint` function or the `defconstraint` macro.
-
-Other validators can be creating by composing constraints using the
-`schema-fn`, `each` and `where` functions.
+```clojure
+user> (require '[fschema.constraints :as c])
+nil
+user> (c/string? 5)
+[{:value 5, :error-id :fschema.constraints/string?}]
+user> (c/string? "abc")
+"abc" ;; Constraints always return the value they were passed upon
+success
+```
 
 ### Constraints and nil values
 
@@ -91,6 +99,9 @@ constraint when passed a `nil` value will silently fail and return
 `nil` instead of an *error* value. To return an *error* when `nil` is
 passed in, use the `not-nill` constraint. This is to facilitate the
 functional composability of constraints.
+Other validators can be creating by composing constraints using the
+`schema-fn`, `each` and `where` functions.
+
 
 ### Mutators
 
