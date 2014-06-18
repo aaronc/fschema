@@ -37,7 +37,7 @@ An example:
 
 Add the following dependency to your `project.clj`:
 
-```
+```clojure
 [fschema "0.2.0"]
 ```
 
@@ -59,6 +59,7 @@ marked with `{:error true}` in its metadata map.
 ```clojure
 user> (error {:error-id ::my-error})
 [{:error-id :user/my-error}]
+
 user> (meta *1)
 {:error true}
 ```
@@ -68,6 +69,7 @@ Errors can also be combined using the `error` function.
 ```clojure
 user> (error {:error-id ::my-error} {:error-id ::my-error2})
 [{:error-id :user/my-error} {:error-id :user/my-error2}]
+
 user> (error *1 {:error-id ::my-error3})
 [{:error-id :user/my-error} {:error-id :user/my-error2} {:error-id :user/my-error3}]
 ```
@@ -93,7 +95,7 @@ values (`error` values are marked using Clojure's metadata facilities).
 Constraints are the simplest validators. Constraints can be
 created using the `constraint` function or the `defconstraint` macro
 (see [Creating Constraints](#creating-constraints)).
-fschema includes a number of built-in constraints.
+fschema includes a number of [built-in constraints](#built-in-constraints).
 
 Constraints return detailed error maps including the `:error-id` and
 failing `value` so that they can be used to created localizable error
@@ -129,9 +131,8 @@ user> (c/not-nil nil)
 
 ## Composing validators and mutators
 
-To make things more interesting we must compose constraints and
-mutators (any function taking a single argument) using the
-`schema-fn`, `each` and `where` functions.
+To make things more interesting we must can validators and
+mutators using the `schema-fn` and `each`functions.
 
 ### schema-fn
 
@@ -194,14 +195,32 @@ user> (f2 5)
 
 #### Validating maps
 
-`schema-fn` can also be used to create map validators. If a map is
-passed as an argument to `schema-fn` 
+`schema-fn` can also be used to create map validators and mutators. If a map is
+passed as an argument to `schema-fn`, `schema-fn` is applied to each
+value in that map and the resulting functions at each key are applied
+to each value with the corresponding keys in an input map. This gives
+us a simple model to compose map validators and nested map validators.
 
+`(schema-fn {:a [c/not-nil c/integer?])` is equivalent to
+`(schema-fn {:a (schema-fn c/not-nil c/integer?)})`. Both
+functions will require the input map to contain an integer value for
+the key `:a`.
 
+One nice feature about map validators is that they will return the
+path of the failing property in error messages (even through multiple
+levels of nesting).
+
+*Map validators will handle `nil` values like constraints - that is a
+ `nil` value passed in will return `nil` as opposed to an error. This
+ may seem counter-intuitive but it helps with composability and
+ consistency. Please use `(schema-fn c\not-nil {...})` to ensure that
+ the map is not `nil`.*
 
 ### each
 
-### where
+The `each` function is used to compose a validator that will validate
+each value in a sequence. *Like map validators and contrainst, `nil`
+values will not return an error so `not-nil` must be explicitly used.*
 
 ## Creating Constraints
 
