@@ -36,10 +36,9 @@ An example:
 ;; [{:path [:b], :value 6, :error-id :fschema.constraints/string?}
     {:path [:d 1], :value "abc", :error-id :fschema.constraints/integer?}]
 
-;; Validators return the input data upon successful validation
 (my-schema {:a 5 :b "6" :c :xyz :d [1 2 3]})
 ;; {:a 5 :b "6" :c :xyz :d [1 2 3]}
-
+;; Validators return the input data upon successful validation
 ```
 
 ## Installation
@@ -90,6 +89,7 @@ non-error value, it will return `nil`.
 ```clojure
 user> (error? (error {:error-id ::my-error}))
 [{:error-id :user/my-error}]
+
 user> (error? {:error-id ::my-error})
 nil
 ```
@@ -118,13 +118,14 @@ basic functions so they are easy to remember. Because of this the
 ```clojure
 user> (require '[fschema.constraints :as c])
 nil
+
 user> (c/string? 5)
 [{:value 5, :error-id :fschema.constraints/string?}]
-user> (c/string? "abc")
-"abc" ;; Constraints always return the value they were passed upon
-success
-user> ((c/> 5) 3)
 
+user> (c/string? "abc")
+"abc" ;; Constraints always return the value they were passed upon success
+
+user> ((c/> 5) 3)
 ```
 
 ### Constraints and nil values
@@ -138,6 +139,7 @@ passed in, the `not-nil` constraint must be used.
 ```clojure
 user> (c/string? nil)
 nil
+
 user> (c/not-nil nil)
 [{:value nil, :error-id :fschema.constraints/not-nil, :message "Required value missing or nil"}]
 ```
@@ -174,7 +176,6 @@ user> (v1 "5")
 user> (v1 5)
 [{:value 5, :error-id :fschema.constraints/string?}]
 
-
 user> (v1 nil)
 [{:value nil, :error-id :fschema.constraints/not-nil, :message "Required value missing or nil"}]
 ```
@@ -189,9 +190,7 @@ user> (f1 5)
 "6"
 
 ;; This is similar to:
-user> (-> 5
-          inc
-          str)
+user> (-> 5 inc str)
 "6"
 ```
 
@@ -230,7 +229,7 @@ user> ((schema-fn {:a c/not-nil}) {})
 user> ((schema-fn {:a c/not-nil}) {:a 1})
 {:a 1}
 
-;; Nested constraints
+;; Nested maps
 user> ((schema-fn {:a [c/not-nil {:b c/not-nil}]}) {:a {}})
 [{:path [:a :b], :value nil, :error-id :fschema.constraints/not-nil}]
 
@@ -253,6 +252,7 @@ upon each member of a sequence.
 user> ((each c/not-nil c/integer?) [1 2.0 nil])
 [{:path [1], :value 2.0, :error-id :fschema.constraints/integer?}
  {:path [2], :value nil, :error-id :fschema.constraints/not-nil}]
+;; each functions return the index in the sequence as part of the path
 
 user> ((each c/not-nil c/integer?) [1 2 3])
 [1 2 3]
@@ -275,7 +275,6 @@ TODO
 The `not-nil` constraint is to be used whenever it is necessary to
 ensure that a value is not nil. *All other constraints will return
 *`nil`* when passed a *`nil`* value.
-
 
 ### string?, number?, integer?, map?, vector?, seq?, keyword?, symbol?, set?, boolean?
     
