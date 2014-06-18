@@ -139,8 +139,7 @@ ensure that a value is not nil. *All other constraints will return
 *`nil`* when passed a *`nil`* value.
 
 
-### string?, number?, integer?, map?, vector?, seq?, keyword?,
-    symbol?, set?, boolean?
+### string?, number?, integer?, map?, vector?, seq?, keyword?, symbol?, set?, boolean?
     
 These constraints are available to validate the type of arguments.
 
