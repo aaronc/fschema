@@ -3,8 +3,15 @@
 Elegant functional data validation and transformation for Clojure and
 Clojurescript.
 
-fschema is intended to provide detailed error messages which can
-easily be rendered into human readable (and localizable error messages).
+fschema has the following design goals:
+- Have a simple intuitive API which allows for easy functional
+  composition of validators and mutators.
+- Provide detailed error messages which can easily be rendered into
+  human readable (and localizable error messages).
+- Allow for validation of individual properties within a complex
+  schema.
+- Return information about property paths in validation error
+  messages.
 
 ## Installation
 
@@ -14,7 +21,12 @@ Add the following dependency to your `project.clj`:
 [fschema "0.2.0"]
 ```
 
-## Validator & Mutator Basics
+## Basics
+
+All validators and mutators are composed of functions taking a signal
+value. To control the process of 
+
+### Validators and Constraints
 
 A validator is any function that takes a value and returns either the
 value it was passed (for successful validation) or an *error* value.
@@ -22,25 +34,28 @@ An error value is any object that returns a truthy (not `nil` or
 `false`) reponse to the `error?` function.
 
 The simplest type of validator is a constraint. Constraints can be
-created with the *constraint* function or the *defconstraint* macro.
+created with the `constraint` function or the `defconstraint` macro.
 
-### Handling of `nil` values
+Other validators can be creating by composing constraints using the
+`schema-fn`, `each` and `where` functions.
+
+### Constraints and nil values
 
 Constraints have the following property: for every constraint *c*
-other than the `not-nia` constraint, `(= (c nil) nil)`. That is, every
+other than the `not-nil` constraint, `(= (c nil) nil)`. That is, every
 constraint when passed a `nil` value will silently fail and return
 `nil` instead of an *error* value. To return an *error* when `nil` is
 passed in, use the `not-nill` constraint. This is to facilitate the
 functional composability of constraints.
 
-Other types of validators can ve created via composition.
+### Mutators
 
 A mutator is any function taking one argument. Mutators may also
 return *error* values (see TODO) to signal that an error has occurred.
 
 ## Composing validators and mutators
 
-### fschema
+### schema-fn
 
 ### each
 
