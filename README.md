@@ -25,7 +25,35 @@ Add the following dependency to your `project.clj`:
 ## Basics
 
 All validators and mutators are composed of functions taking a signal
-value. To control the process of 
+argument. A validator is a function that always returns the value it
+was passed or an *error* value. A mutator may return the value it was
+passed, a different "mutated" value, or return an *error* value. *error*
+values control the flow of execution in fschema.
+
+### Errors
+
+An *error* value is created using the `error` function. A new error
+value may be created by passing a map describing the `error` to the
+error function. The result will be a vector containing this error
+marked with `{:error true}` in its metadata map.
+
+```clojure
+user> (error {:error-id ::my-error})
+[{:error-id :user/my-error}]
+user> (meta *1)
+{:error true}
+```
+
+Errors can also be combined using the `error` function.
+
+```clojure
+user> (error {:error-id ::my-error} {:error-id ::my-error2})
+[{:error-id :user/my-error} {:error-id :user/my-error2}]
+user> (error *1 {:error-id ::my-error3})
+[{:error-id :user/my-error} {:error-id :user/my-error2} {:error-id :user/my-error3}]
+```
+
+This allows us for a simple way to mark 
 
 ### Validators and Constraints
 
