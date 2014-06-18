@@ -131,7 +131,7 @@ user> ((c/> 5) 3)
 ### Constraints and nil values
 
 For every constraint other than the `not-nil` constraint, the
-constraint will not return an `error` when passed a `nil` value, but
+constraint will *not* return an `error` when passed a `nil` value, but
 instead return `nil`. This is to facilitate the
 functional composability of constraints. To return an `error` when `nil` is
 passed in, the `not-nil` constraint must be used. 
