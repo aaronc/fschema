@@ -117,14 +117,36 @@ mutators (any function taking a single argument) using the
 ### schema-fn
 
 `schema-fn` is the main function used for composing validators and
-mutators.
+mutators. It creates "schema functions", thus the name `schema-fn`.
 
-#### Function Composition with error checking
+#### Function Chains with Error Checking
 
-If it is passed multiple functions or a vector of functions it will
+If `schema-fn` is passed multiple functions or a vector of functions it will
 chain these functions together and create a composite function which
 threads a value passed to it through each function. In some ways it is
-similar to Clojure's `->` macro.
+similar to Clojure's `->` macro. The main difference is that
+`schema-fn` will stop threading if any function in the chain returns
+an `error` values.
+
+Here is an example of creating a composite validator using constraints
+and `schema-fn`:
+
+```clojure
+user> (def v1 (schema-fn c/not-nil c/string?)
+#'user/v1
+
+user> (v1 "5")
+"5" ;; successful validation returns the same value
+
+user> (v1 5)
+[{:value 5, :error-id :fschema.constraints/string?}]
+
+
+user> (v1 nil)
+[{:value nil, :error-id :fschema.constraints/not-nil, :message "Required value missing or nil"}]
+```
+
+Mutators can also be composed using schema-fn:
 
 ```clojure
 user> (def f1 (schema-fn inc str))
@@ -137,6 +159,17 @@ user> (f1 5)
 user> (-> 5
           inc
           str)
+"6"
+```
+
+A vector of functions can also be used to get the same result:
+
+
+```clojure
+user> (def f2 (schema-fn [inc str]))
+#'user/f2
+
+user> (f2 5)
 "6"
 ```
 
