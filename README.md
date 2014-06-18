@@ -210,11 +210,11 @@ One nice feature about map validators is that they will return the
 path of the failing property in error messages (even through multiple
 levels of nesting).
 
-*Map validators will handle `nil` values like constraints - that is a
- `nil` value passed in will return `nil` as opposed to an error. This
+*Map validators will handle *`nil`* values like constraints - that is a
+ *`nil`* value passed in will return *`nil`* as opposed to an error. This
  may seem counter-intuitive but it helps with composability and
- consistency. Please use `(schema-fn c\not-nil {...})` to ensure that
- the map is not `nil`.*
+ consistency. Please use *`(schema-fn c/not-nil {...})`* to ensure that
+ the map is not *`nil`.
 
 ### each
 
