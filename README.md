@@ -14,6 +14,25 @@ fschema has the following design goals:
 - Return information about property paths in validation error
   messages.
 
+An example:
+
+```clojure
+(ns example
+    (:require [fschema.core :refer [schema-fn each]])
+    (:require [fschema.constraints :as c])
+
+(def my-schema
+    (schema-fn
+        {:a [c/not-nil (c/>= 0)]
+         :b [c/string?]
+         :c [c/not-nil c/keyword?]
+         :d [c/vector? (each c/integer?)]}))
+
+(my-schema {:a -1})
+;;
+
+```
+
 ## Installation
 
 Add the following dependency to your `project.clj`:
@@ -119,14 +138,14 @@ mutators (any function taking a single argument) using the
 `schema-fn` is the main function used for composing validators and
 mutators. It creates "schema functions", thus the name `schema-fn`.
 
-#### Function Chains with Error Checking
+#### Function Chaining with Error Checking
 
 If `schema-fn` is passed multiple functions or a vector of functions it will
 chain these functions together and create a composite function which
-threads a value passed to it through each function. In some ways it is
-similar to Clojure's `->` macro. The main difference is that
-`schema-fn` will stop threading if any function in the chain returns
-an `error` values.
+threads the value passed to it through each function. In some ways it is
+similar to Clojure's `->` macro. `schema-fn`'s special feature is that
+it will stop threading if any function in the chain return
+an `error` value and it will instead return that error.
 
 Here is an example of creating a composite validator using constraints
 and `schema-fn`:
@@ -146,7 +165,7 @@ user> (v1 nil)
 [{:value nil, :error-id :fschema.constraints/not-nil, :message "Required value missing or nil"}]
 ```
 
-Mutators can also be composed using schema-fn:
+Mutators can also be composed using `schema-fn`:
 
 ```clojure
 user> (def f1 (schema-fn inc str))
@@ -155,7 +174,7 @@ user> (def f1 (schema-fn inc str))
 user> (f1 5)
 "6"
 
-;; Similar to:
+;; This is similar to:
 user> (-> 5
           inc
           str)
@@ -172,6 +191,11 @@ user> (def f2 (schema-fn [inc str]))
 user> (f2 5)
 "6"
 ```
+
+#### Validating maps
+
+`schema-fn` can also be used to create map validators. If a map is
+passed as an argument to `schema-fn` 
 
 
 
