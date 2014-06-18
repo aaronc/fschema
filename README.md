@@ -1,6 +1,6 @@
 # fschema
 
-Elegant functional data validation and transformation for Clojure and
+Elegant functional data validation and mutation for Clojure and
 Clojurescript.
 
 fschema has the following design goals:
@@ -116,7 +116,29 @@ mutators (any function taking a single argument) using the
 
 ### schema-fn
 
-`schema-fn` is the main function 
+`schema-fn` is the main function used for composing validators and
+mutators.
+
+#### Function Composition with error checking
+
+If it is passed multiple functions or a vector of functions it will
+chain these functions together and create a composite function which
+threads a value passed to it through each function. In some ways it is
+similar to Clojure's `->` macro.
+
+```clojure
+user> (def f1 (schema-fn inc str))
+#'user/f1
+
+user> (f1 5)
+"6"
+
+;; Similar to:
+user> (-> 5
+          inc
+          str)
+"6"
+```
 
 ### each
 
