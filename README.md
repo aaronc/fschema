@@ -62,9 +62,9 @@ values control the flow of execution in fschema.
 
 ### Errors
 
-An `error` value is created using the `error` function. A new error
+An `error` value is created using the `error` function. A new `error`
 value may be created by passing a map describing the `error` to the
-error function. The result will be a vector containing this error
+`error` function. The result will be a vector containing this `error`
 marked with `{:error true}` in its metadata map.
 
 ```clojure
@@ -96,10 +96,10 @@ user> (error? {:error-id ::my-error})
 nil
 ```
 
-This gives us a simple way to collect errors that may be collected at
+This gives us a simple way to collect errors that may occur at
 different places within execution (for instance on different branches
 of the same map) and to easily differentiate them from other valid
-values (`error` values are marked using Clojure's metadata facilities).
+values (`error` values are marked using Clojure metadata facilities).
 
 ### Constraints
 
@@ -108,8 +108,10 @@ created using the `constraint` function or the `defconstraint` macro
 (see [Creating Constraints](#creating-constraints)).
 fschema includes a number of [built-in constraints](#built-in-constraints).
 
-Constraints return detailed error maps including the `:error-id` and
-failing `value` so that they can be used to created localizable error
+Constraints return error maps that include the `:error-id` and
+failing `:value` as well as possibly `:params` specific to this
+constraint instance and a default error `:message`.
+This enables error maps to be used to generate specific localizable error
 messages. fschema's builtin constraints intentionally mirror Clojure's
 basic functions so they are easy to remember. Because of this the
 `fschema.constraints` namespace must always be `require`'d using an
@@ -123,6 +125,8 @@ user> (c/string? 5)
 user> (c/string? "abc")
 "abc" ;; Constraints always return the value they were passed upon
 success
+user> ((c/> 5) 3)
+
 ```
 
 ### Constraints and nil values
