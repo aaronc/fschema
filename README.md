@@ -32,11 +32,9 @@ An example:
 ;; [{:path [:a], :value -1, :error-id :fschema.constraints/>=, :params [0]}
     {:path [:c], :value nil, :error-id :fschema.constraints/not-nil}]
     
-
 (my-schema {:a 5 :b 6 :c :xyz :d [1 "abc" 3]})
 ;; [{:path [:b], :value 6, :error-id :fschema.constraints/string?}
     {:path [:d 1], :value "abc", :error-id :fschema.constraints/integer?}]
-
 
 ;; Validators return the input data upon successful validation
 (my-schema {:a 5 :b "6" :c :xyz :d [1 2 3]})
