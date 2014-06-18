@@ -27,12 +27,12 @@ Add the following dependency to your `project.clj`:
 All validators and mutators are composed of functions taking a signal
 argument. A validator is a function that always returns the value it
 was passed or an `error` value. A mutator may return the value it was
-passed, a different "mutated" value, or return an `error` value. `error`
+passed, a "mutated" value, or an `error` value. `error`
 values control the flow of execution in fschema.
 
 ### Errors
 
-An *error* value is created using the `error` function. A new error
+An `error` value is created using the `error` function. A new error
 value may be created by passing a map describing the `error` to the
 error function. The result will be a vector containing this error
 marked with `{:error true}` in its metadata map.
