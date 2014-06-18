@@ -139,10 +139,10 @@ ensure that a value is not nil. *All other constraints will return
 *`nil`* when passed a *`nil`* value.
 
 
-### Type checking
-The `string?`, `map?`, `seq?`, `number?`, `integer?`, `boolean?`,
-`keyword?`, and `symbol?` constraints are available to validate the
-type of arguments.
+### string?, number?, integer?, map?, vector?, seq?, keyword?,
+    symbol?, set?, boolean?
+    
+These constraints are available to validate the type of arguments.
 
 *Note:  these functions intentionally mirror Clojure's type checking
 functions.  The *`fschema.constraints`* namespace must never be loaded
@@ -156,7 +156,7 @@ user> (c/map? {:a 1})
 {:a 1}
 ```
 
-### Regex
+### re-matches
 The `re-matches` constraint factory function can be used to match
 strings against regular expressions. (*Note: the *`string?`* constraint is
 invoked implicity when `re-matches` is used.*)
@@ -176,7 +176,7 @@ user> ((c/re-matches #"a.\*z") "abcz")
 "abcz"
 ```
 
-### Numeric Range
+### <, >, <=, =>, not= and =
 The `=`, `<`, `>`, `<=`, and `>=` constraint constructors are
 available to validate the range of numeric values. (*Note: the*
 `number?` *constraint is invoked implicitly when any of the numeric
@@ -197,7 +197,7 @@ user> ((c/> 3) 4)
 4
 ```
 
-### String and Sequence Length
+### String & Sequence Length: count=, count<, count>, count<=, and count>=
 
 The `count=`, `count<`, `count>`, `count<=`, and `count>=` constraint
 constructors are available to validate the length of strings and

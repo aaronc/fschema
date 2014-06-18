@@ -5,11 +5,11 @@
   (:refer-clojure :exclude [> < <= >= string? number?
                             map? vector? seq re-matches
                             keyword? symbol? set? integer?
-                            seq? =]))
+                            seq? = not=]))
 
 (def not-nil fschema.core.constraint/not-nil)
 
-(defconstraint any identity)
+(defconstraint any (constantly true))
 
 (defconstraint string? clojure.core/string?)
 
@@ -34,6 +34,9 @@
 (defconstraint = [x] (fn [y] (clojure.core/= y x))
   :pre-constraint number?)
 
+(defconstraint not= [x] (fn [y] (clojure.core/not= y x))
+  :pre-constraint number?)
+
 (defconstraint > [x] (fn [y] (clojure.core/> y x))
   :pre-constraint number?)
 
@@ -46,10 +49,8 @@
 (defconstraint <= [x] (fn [y] (clojure.core/<= y x))
   :pre-constraint number?)
 
-
 (defconstraint re-matches [r] (fn [x] (clojure.core/re-matches r x))
   :pre-constraint string?)
-
 
 (defconstraint count= [n] (fn [coll] (clojure.core/= (count coll) n)))
 
