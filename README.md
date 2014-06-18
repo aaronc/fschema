@@ -148,6 +148,9 @@ functions.  The *`fschema.constraints`* namespace must never be loaded
 with *`:use`* (which is bad practice anyway).*
 
 ```clojure
+user> (require '[fschema.constraints :as c])
+nil
+
 user> (c/string? 7)
 [{:value 7, :error-id :fschema.constraints/string?}]
 
@@ -165,6 +168,9 @@ function.  The *`fschema.constraints`* namespace must never be loaded
 with *`:use`* (which is bad practice anyway).*
 
 ```clojure
+user> (require '[fschema.constraints :as c])
+nil
+
 user> ((c/re-matches #"a.\*z") "abx")
 [{:value "abx", :error-id :re-matches, :params [#"a.\*z"]}]
 
@@ -175,8 +181,8 @@ user> ((c/re-matches #"a.\*z") "abcz")
 "abcz"
 ```
 
-### <, >, <=, =>, not= and =
-The `=`, `<`, `>`, `<=`, and `>=` constraint constructors are
+### <, >, <=, =>, not=, =
+The `<`, `>`, `<=`, `>=`, `not=` and `=` constraint constructors are
 available to validate the range of numeric values. (*Note: the*
 `number?` *constraint is invoked implicitly when any of the numeric
 range functions are used.*)
@@ -186,6 +192,9 @@ operators.  The *`fschema.constraints`* namespace must never be loaded
 with *`:use`* (which is bad practice anyway).*
 
 ```clojure
+user> (require '[fschema.constraints :as c])
+nil
+
 user> ((c/> 3) 2)
 [{:value 2, :error-id :fschema.constraints/>, :params [3]}]
 
@@ -196,7 +205,7 @@ user> ((c/> 3) 4)
 4
 ```
 
-### String & Sequence Length: count=, count<, count>, count<=, and count>=
+### count=, count<, count>, count<=, and count>=
 
 The `count=`, `count<`, `count>`, `count<=`, and `count>=` constraint
 constructors are available to validate the length of strings and
