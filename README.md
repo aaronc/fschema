@@ -4,6 +4,7 @@ Elegant functional data validation and transformation for Clojure and
 Clojurescript.
 
 fschema has the following design goals:
+
 - Have a simple intuitive API which allows for easy functional
   composition of validators and mutators.
 - Provide detailed error messages which can easily be rendered into
