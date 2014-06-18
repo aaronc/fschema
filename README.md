@@ -29,7 +29,18 @@ An example:
          :d [c/vector? (each c/integer?)]}))
 
 (my-schema {:a -1})
-;;
+;; [{:path [:a], :value -1, :error-id :fschema.constraints/>=, :params [0]}
+    {:path [:c], :value nil, :error-id :fschema.constraints/not-nil}]
+    
+
+(my-schema {:a 5 :b 6 :c :xyz :d [1 "abc" 3]})
+;; [{:path [:b], :value 6, :error-id :fschema.constraints/string?}
+    {:path [:d 1], :value "abc", :error-id :fschema.constraints/integer?}]
+
+
+;; Validators return the input data upon successful validation
+(my-schema {:a 5 :b "6" :c :xyz :d [1 2 3]})
+;; {:a 5 :b "6" :c :xyz :d [1 2 3]}
 
 ```
 
@@ -210,6 +221,21 @@ One nice feature about map validators is that they will return the
 path of the failing property in error messages (even through multiple
 levels of nesting).
 
+```clojure
+user> ((schema-fn {:a c/not-nil}) {})
+[{:path [:a], :value nil, :error-id :fschema.constraints/not-nil}]
+
+user> ((schema-fn {:a c/not-nil}) {:a 1})
+{:a 1}
+
+;; Nested constraints
+user> ((schema-fn {:a [c/not-nil {:b c/not-nil}]}) {:a {}})
+[{:path [:a :b], :value nil, :error-id :fschema.constraints/not-nil}]
+
+user> ((schema-fn {:a [c/not-nil {:b c/not-nil}]}) {:a {:b 5}})
+{:a {:b 5}}
+```
+
 *Map validators will handle *`nil`* values like constraints - that is a
  *`nil`* value passed in will return *`nil`* as opposed to an error. This
  may seem counter-intuitive but it helps with composability and
@@ -218,17 +244,27 @@ levels of nesting).
 
 ### each
 
-The `each` function is used to compose a validator that will validate
-each value in a sequence. *Like map validators and contrainst, `nil`
-values will not return an error so `not-nil` must be explicitly used.*
+The `each` function is used to compose a `schema-fn` that will be executed
+upon each member of a sequence.
+
+```clojure
+user> ((each c/not-nil c/integer?) [1 2.0 nil])
+[{:path [1], :value 2.0, :error-id :fschema.constraints/integer?}
+ {:path [2], :value nil, :error-id :fschema.constraints/not-nil}]
+
+user> ((each c/not-nil c/integer?) [1 2 3])
+[1 2 3]
+```
 
 ## Creating Constraints
 
 ### constraint
 
-Constraints can be created with the `constraint` function which takes 
+TODO
 
 ### defconstraint
+
+TODO
 
 ## Built-in Constraints
 

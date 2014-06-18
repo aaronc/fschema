@@ -1,7 +1,6 @@
 (ns fschema.core
   (:require
    [fschema.error :refer :all]
-   [fschema.util.functor :refer [fmap]]
    [fschema.constraints :as c]
    [fschema.core.constraint]))
 
@@ -16,33 +15,7 @@
 
 (derive ::where ::fschema-fn)
 
-(derive ::all ::fschema-fn)
-
-(defmulti deep-fschema-fn
-  "Applies function f to each item in the data structure s and returns
-   a structure of the same kind."
-   {:arglists '([f s])}
-   (fn [f s] (type s)))
-
-(defmethod deep-fschema-fn :default [f v] (f v))
-
-(defmethod deep-fschema-fn clojure.lang.IPersistentList
-  [f v]
-  (map (partial deep-fschema-fn f) v))
-
-(defmethod deep-fschema-fn clojure.lang.IPersistentVector
-  [f v]
-  (into (empty v) (map (partial deep-fschema-fn f) v)))
-
-(defmethod deep-fschema-fn clojure.lang.IPersistentMap
-  [f m]
-  (into (empty m) (for [[k v] m] [k (deep-fschema-fn f v)])))
-
-(defmethod deep-fschema-fn clojure.lang.IPersistentSet
-  [f s]
-  (into (empty s) (map (partial deep-fschema-fn f) s)))
-
-(declare fschema)
+(declare schema-fn)
 
 (defn- make-fschema-chain [fns]
   (if (= 1 (count fns))
@@ -54,12 +27,12 @@
       :fns fns})))
 
 (defn- make-fschema-map [x]
-  (let [fn-map (fmap fschema x)]
+  (let [fn-map (into {} (for [[k v] x] [k (schema-fn v)]))]
     (with-meta
-      (fschema
+      (schema-fn
        c/map?
        (fn fschema-map [obj]
-         (let [mutations
+         (let [results
                (doall
                 (remove
                  nil?
@@ -74,24 +47,24 @@
                 (map (fn [[k v]]
                        (when (error? v)
                          (prepend-error-paths v k)))
-                     mutations))]
+                     results))]
            (or errs
-               (reduce (fn [obj [k v]] (assoc obj k v)) obj mutations)))))
+               (reduce (fn [obj [k v]] (assoc obj k v)) obj results)))))
       {:type ::fschema-map :fn-map fn-map})))
 
-(defn fschema [& args]
-  (mutator-chain
+(defn schema-fn [& args]
+  (make-fschema-chain
    (for [x args]
      (cond
       (fn? x) x
-      (map? x) (map->mutator x)
-      (seq x) (apply fschema x)
+      (map? x) (make-fschema-map x)
+      (vector? x) (apply schema-fn x)
       :else (throw (ex-info (str "Don't know how to coerce " x " to an fschema fn")
-                            {:error-id ::mutator-definition-error
-                             :x x :args args}))))))
+                            {:error-id ::schema-fn-definition-error
+                             :value x :args args}))))))
 
 (defn each [& fs]
-  (let [f (apply ->mutator fs)]
+  (let [f (apply schema-fn fs)]
     (with-meta
      (fn mutate-each [xs]
        (let [xs-res
@@ -111,21 +84,15 @@
       :func f})))
 
 (defn where [where-fn f]
-  (let [where-fn (if (is-validator? where-fn)
-                  (fn validator-where-fn [x] (not (error? (where-fn x))))
-                  where-fn)]
-    (with-meta
-      (fn where-mutator
-        [x]
-        (if (where-fn x)
-          (f x)
-          x))
-      {:type ::where :where-fn where-fn :f f})))
-
-(defn all [mutator-fn]
-  (fn all-mutator
-    [x]
-    (deep-fmap mutator-fn x)))
+  (with-meta
+    (fn where-fn-wrapper
+      [x]
+      (let [test (where-fn x)]
+        (cond
+         (error? test) test
+         test (f x)
+         :default x)))
+    {:type ::where :where-fn where-fn :f f}))
 
 ;; Decomposing Schemas for Property Paths
 
@@ -142,7 +109,7 @@
 
 (defmethod for-path ::fschema-chain [v ks]
   (let [{:keys [validators]} (meta v)]
-    (validator-chain (map #(for-path % ks) validators))))
+    (make-fschema-chain (map #(for-path % ks) validators))))
 
 ;; (defmethod for-path ::each [v ks]
 ;;   (let [{:keys [f]} (meta v)]

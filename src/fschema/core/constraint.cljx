@@ -56,7 +56,8 @@
 
 (def not-nil
   (let [attrs {:error-id :fschema.constraints/not-nil
-                :message "Required value missing or nil"}]
+                ;:message "Required value missing or nil"
+               }]
     (tag-constraint
       (fn not-nil [x]
         (if (nil? x)

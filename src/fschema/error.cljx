@@ -40,11 +40,11 @@
 
    Ex:
      user=> (prepend-error-paths [{:error-id :test :path [:a]} {:error-id :test2}] :b)
-     [{:path [:a :b], :error-id :test} {:path (:b), :error-id :test2}]"
+     [{:path [:b :a], :error-id :test} {:path [:b], :error-id :test2}]
   [errors path]
   (if (nil? path)
     errors
     (error
      (map
-      (fn [err] (update-in err [:path] (fn [p] (vec (conj p path)))))
+      (fn [err] (update-in err [:path] (fn [p] (vec (cons path p)))))
       errors))))
