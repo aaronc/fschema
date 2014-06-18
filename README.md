@@ -1,13 +1,14 @@
 # fschema
 
-Elegant functional data validation and transformation for Clojure(script).
+Elegant functional data validation and transformation for Clojure and
+Clojurescript.
 
 fschema is intended to provide detailed error messages which can
 easily be rendered into human readable (and localizable error messages).
 
-## Getting Started
+## Installation
 
-Add the following dependenct to your `project.clj`:
+Add the following dependency to your `project.clj`:
 
 ```
 [fschema "0.2.0"]
@@ -15,15 +16,22 @@ Add the following dependenct to your `project.clj`:
 
 ## Validator & Mutator Basics
 
-A validator is any function that takes a value and returns either that
-value or an *error* value (any object that responds truthy to the
-*error?* function).
+A validator is any function that takes a value and returns either the
+value it was passed (for successful validation) or an *error* value.
+An error value is any object that returns a truthy (not `nil` or
+`false`) reponse to the `error?` function.
 
 The simplest type of validator is a constraint. Constraints can be
-created with the *constraint* or the *defconstraint* macro.
+created with the *constraint* function or the *defconstraint* macro.
+
+### Handling of `nil` values
 
 Constraints have the following property: for every constraint *c*
-other than the *not-nil* constraint, `(= (c nil) nil)`. 
+other than the `not-nia` constraint, `(= (c nil) nil)`. That is, every
+constraint when passed a `nil` value will silently fail and return
+`nil` instead of an *error* value. To return an *error* when `nil` is
+passed in, use the `not-nill` constraint. This is to facilitate the
+functional composability of constraints.
 
 Other types of validators can ve created via composition.
 
