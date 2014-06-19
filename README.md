@@ -132,7 +132,7 @@ user> ((c/> 5) 3)
 
 *By default, all constraints include the *`not-nil`* constraint. To
  allow for *`nil`* values to pass through silently (without an *`error`*)
- the *`optional`* function can be used.*
+ the *[`optional`](#optional)* function can be used.*
 
 ## Composing validators and mutators
 
@@ -261,8 +261,8 @@ user> ((where number? (c/> 0)) "abc")
 
 ### optional
 
-Optional is short-hand for `(where? some x)`. It is used to allow
-`nil` values to pass through silently without an `error`.
+`(optional f)` is short-hand for `(where? #(not (nil? %)) f)`. It is
+used to allow `nil` values to pass through silently without an `error`.
 
 ```clojure
 user> ((schema-fn {:a (optional c/integer?)}) {})
