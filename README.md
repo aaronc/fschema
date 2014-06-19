@@ -209,7 +209,7 @@ user> (f2 5)
 "6"
 ```
 
-#### Validating maps
+#### Validating and mutating maps
 
 `schema-fn` can also be used to create map validators and mutators. If a map is
 passed as an argument to `schema-fn`, `schema-fn` is applied to each
@@ -241,7 +241,7 @@ user> ((schema-fn {:a [c/not-nil {:b c/not-nil}]}) {:a {:b 5}})
 {:a {:b 5}}
 ```
 
-*Map validators check for* `nil` *values like constraints. They also
+*Map schema fn's check for* `nil` *values like constraints. They also
 ensure that the input value actually is a map.*
 
 
@@ -266,6 +266,18 @@ user> ((each c/not-nil c/integer?) [1 2.0 nil])
 
 user> ((each c/not-nil c/integer?) [1 2 3])
 [1 2 3]
+```
+
+*Each schema fn's check for* `nil` *values like constraints. They also
+ensure that the input value satisfies the* `eachable?` * constraint.*
+
+
+```clojure
+user> ((each c/integer?) nil)
+[{:value nil, :error-id :fschema.constraints/not-nil}]
+
+user> ((each c/integer?) 5)
+[{:value 5, :error-id :fschema.constraints/eachable?}]
 ```
 
 ### where
