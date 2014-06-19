@@ -134,14 +134,14 @@ user> ((c/> 5) 3)
 ### Handling of nil values
 
 *By default, all constraints include the* `not-nil` *constraint. To
- allow for* `nil` *values to pass through silently (without an* `error`*)
+ allow* `nil` *values to pass through silently (without an* `error`*)
  the* `optional` *function can be used.*
 
 
 ```clojure
 user> (c/string? nil)
 [{:value nil, :error-id :fschema.constraints/not-nil}]
-;; Constraints check for nil values first by default.
+;; Constraints fail on nil values first by default
 
 fschema.core> ((optional c/string?) nil)
 nil
@@ -239,6 +239,18 @@ user> ((schema-fn {:a [c/not-nil {:b c/not-nil}]}) {:a {}})
 
 user> ((schema-fn {:a [c/not-nil {:b c/not-nil}]}) {:a {:b 5}})
 {:a {:b 5}}
+```
+
+*Map validators check for* `nil` *values like constraints. They also
+ensure that the input value actually is a map.*
+
+
+```clojure
+user> ((schema-fn {}) nil)
+[{:value nil, :error-id :fschema.constraints/not-nil}]
+
+user> ((schema-fn {}) [])
+[{:value [], :error-id :fschema.constraints/map?}]
 ```
 
 ### each
