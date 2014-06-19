@@ -128,11 +128,25 @@ user> (c/string? "abc")
 
 user> ((c/> 5) 3)
 [{:value 3, :error-id :fschema.constraints/>, :params [5]}]
+
 ```
 
-*By default, all constraints include the *`not-nil`* constraint. To
- allow for *`nil`* values to pass through silently (without an *`error`*)
- the *`optional`* function can be used.*
+### Handling of nil values
+
+*By default, all constraints include the* `not-nil` *constraint. To
+ allow for* `nil` *values to pass through silently (without an* `error`*)
+ the* `optional` *function can be used.*
+
+
+```clojure
+user> (c/string? nil)
+[{:value nil, :error-id :fschema.constraints/not-nil}]
+;; Constraints check for nil values first by default.
+
+fschema.core> ((optional c/string?) nil)
+nil
+;; This version fails silently (without an error) when passed a nil value
+```
 
 ## Composing validators and mutators
 
