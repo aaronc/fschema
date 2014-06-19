@@ -1,7 +1,7 @@
 (ns fschema.constraints
   (:require
    [fschema.core.constraint :refer [tag-constraint defconstraint constraint]]
-   [fschema.error :refer [error error?]])
+   [fschema.core.error :refer [error error?]])
   (:refer-clojure :exclude [> < <= >= string? number?
                             map? vector? re-matches
                             keyword? symbol? set? integer?
@@ -81,3 +81,11 @@
 
 (defconstraint count>= [n] (fn [coll] (clojure.core/>= (count coll) n))
   :pre-constraint countable?)
+
+(defconstraint eachable?
+  (fn [x]
+    (or
+     (clojure.core/instance? clojure.lang.IPersistentList x)
+     (clojure.core/instance? clojure.lang.IPersistentVector x)
+     (clojure.core/instance? clojure.lang.IPersistentMap x)
+     (clojure.core/instance? clojure.lang.IPersistentSet x))))

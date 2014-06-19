@@ -1,4 +1,4 @@
-(ns fschema.error)
+(ns fschema.core.error)
 
 ;; The core function in fschema is the simple error? function which
 ;; determines if a given value represents an error object. An error object

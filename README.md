@@ -247,7 +247,7 @@ user> ((schema-fn {:a [c/not-nil {:b c/not-nil}]}) {:a {:b 5}})
 ### each
 
 The `each` function is used to compose a `schema-fn` that will be executed
-upon each member of a sequence.
+upon each member of a sequence and return a sequence of the same type.
 
 ```clojure
 user> ((each c/not-nil c/integer?) [1 2.0 nil])

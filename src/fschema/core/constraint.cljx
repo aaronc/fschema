@@ -1,11 +1,12 @@
 (ns fschema.core.constraint
   (:require
-   [fschema.error :refer :all]))
+   [fschema.core.error :refer :all]))
 
 (def defined-constraints
   "A atom containing a map of constraints and constraint constructors
    created with defconstraint."
-  (atom {:fschema.constraints/not-nil {}}))
+  (atom {:fschema.constraints/not-nil {}
+         :fschema.constraints/eachable? {}}))
 
 (defn tag-constraint [f attrs]
   (with-meta f (assoc attrs :type :fschema.core/constraint)))
