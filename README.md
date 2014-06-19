@@ -289,7 +289,7 @@ the test-fn returns a `nil`, `false`, or `error` value, the
 function(s) won't be applied - test-fn may therefore be either a
 regular function or a validator.
 
-```
+```clojure
 user> ((where number? (c/> 0)) -1)
 [{:value -1, :error-id :fschema.constraints/>, :params [0]}]
 
