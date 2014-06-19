@@ -132,7 +132,7 @@ user> ((c/> 5) 3)
 
 *By default, all constraints include the *`not-nil`* constraint. To
  allow for *`nil`* values to pass through silently (without an *`error`*)
- the *[`optional`](#optional)* function can be used.*
+ the *`optional`* function can be used.*
 
 ## Composing validators and mutators
 
