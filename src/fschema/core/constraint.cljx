@@ -2,6 +2,11 @@
   (:require
    [fschema.error :refer :all]))
 
+(def defined-constraints
+  "A atom containing a map of constraints and constraint constructors
+   created with defconstraint."
+  (atom {:fschema.constraints/not-nil {}}))
+
 (defn tag-constraint [f attrs]
   (with-meta f (assoc attrs :type :fschema.core/constraint)))
 
@@ -39,20 +44,28 @@
             test-fn (second kvs)
             kvs (rest (rest kvs))
             attrs (apply hash-map kvs)]
-        `(def ~vname
-           (with-meta
-             (fn ~vname ~args
+        `(do
+           (def ~vname
+               (with-meta
+                 (fn ~vname ~args
+                   (fschema.core.constraint/constraint*
+                    (merge {:name ~vcode :params ~args :test-fn ~test-fn}
+                           ~attrs)))
+                 ~(merge
+                   {:type ::constraint-constructor
+                    :name vcode}
+                   attrs)))
+           (swap! fschema.core.constraint/defined-constraints
+                  assoc ~vcode (merge ~attrs {:params '~args :test-fn '~test-fn :constraint-constructor ~vname}))
+           #'~vname))
+      (let [test-fn (first kvs)
+            attrs (apply hash-map (rest kvs))]
+        `(do (def ~vname 
                (fschema.core.constraint/constraint*
-                (merge {:name ~vcode :params ~args :test-fn ~test-fn}
+                (merge {:name ~vcode :test-fn ~test-fn}
                        ~attrs)))
-             ~(merge
-               {:type ::constraint-constructor
-                :name vcode}
-               attrs))))
-      `(def ~vname 
-         (fschema.core.constraint/constraint*
-          (merge {:name ~vcode :test-fn ~(first kvs)}
-                 ~(apply hash-map (rest kvs))))))))
+             (swap! fschema.core.constraint/defined-constraints assoc ~vcode (merge ~attrs {:test-fn '~test-fn :constraint ~vname}))
+             #'~vname)))))
 
 (def not-nil
   (let [attrs {:error-id :fschema.constraints/not-nil

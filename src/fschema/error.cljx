@@ -40,7 +40,7 @@
 
    Ex:
      user=> (prepend-error-paths [{:error-id :test :path [:a]} {:error-id :test2}] :b)
-     [{:path [:b :a], :error-id :test} {:path [:b], :error-id :test2}]
+     [{:path [:b :a], :error-id :test} {:path [:b], :error-id :test2}]"
   [errors path]
   (if (nil? path)
     errors

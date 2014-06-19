@@ -3,9 +3,9 @@
    [fschema.core.constraint :refer [tag-constraint defconstraint constraint]]
    [fschema.error :refer [error error?]])
   (:refer-clojure :exclude [> < <= >= string? number?
-                            map? vector? seq re-matches
+                            map? vector? re-matches
                             keyword? symbol? set? integer?
-                            seq? = not=]))
+                            seq? coll? list? instance? = not=]))
 
 (def not-nil fschema.core.constraint/not-nil)
 
@@ -21,13 +21,19 @@
 
 (defconstraint vector? clojure.core/vector?)
 
-(defconstraint seq? clojure.core/seq)
+(defconstraint seq? clojure.core/seq?)
 
 (defconstraint keyword? clojure.core/keyword?)
 
 (defconstraint symbol? clojure.core/symbol?)
 
 (defconstraint set? clojure.core/set?)
+
+(defconstraint coll? clojure.core/coll?)
+
+(defconstraint list? clojure.core/list?)
+
+(defconstraint instance? [t] (fn [x] (clojure.core/instance? t x)))
 
 (defconstraint boolean? (fn [x] #{true false} x))
 
@@ -52,12 +58,26 @@
 (defconstraint re-matches [r] (fn [x] (clojure.core/re-matches r x))
   :pre-constraint string?)
 
-(defconstraint count= [n] (fn [coll] (clojure.core/= (count coll) n)))
+(defconstraint countable?
+  (fn [x]
+    (or (clojure.core/instance? clojure.lang.Counted x)
+        (clojure.core/instance? clojure.lang.IPersistentCollection x)
+        (clojure.core/instance? java.lang.CharSequence x)
+        (clojure.core/instance? java.util.Collection x)
+        (clojure.core/instance? java.util.Map x)
+        (.. x getClass isArray))))
 
-(defconstraint count> [n] (fn [coll] (clojure.core/> (count coll) n)))
+(defconstraint count= [n] (fn [coll] (clojure.core/= (count coll) n))
+  :pre-constraint countable?)
 
-(defconstraint count< [n] (fn [coll] (clojure.core/< (count coll) n)))
+(defconstraint count> [n] (fn [coll] (clojure.core/> (count coll) n))
+  :pre-constraint countable?)
 
-(defconstraint count<= [n] (fn [coll] (clojure.core/<= (count coll) n)))
+(defconstraint count< [n] (fn [coll] (clojure.core/< (count coll) n))
+  :pre-constraint countable?)
 
-(defconstraint count>= [n] (fn [coll] (clojure.core/>= (count coll) n)))
+(defconstraint count<= [n] (fn [coll] (clojure.core/<= (count coll) n))
+  :pre-constraint countable?)
+
+(defconstraint count>= [n] (fn [coll] (clojure.core/>= (count coll) n))
+  :pre-constraint countable?)

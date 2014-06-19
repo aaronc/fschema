@@ -1,8 +1,12 @@
 (ns fschema.core
   (:require
-   [fschema.error :refer :all]
+   [fschema.error :refer [prepend-error-paths]]
    [fschema.constraints :as c]
    [fschema.core.constraint]))
+
+(def error fschema.error/error)
+
+(def error? fschema.error/error?)
 
 ;; Type hierachy
 (derive ::constraint ::fschema-fn)
@@ -83,16 +87,20 @@
      {:type ::each
       :func f})))
 
-(defn where [where-fn f]
-  (with-meta
-    (fn where-fn-wrapper
-      [x]
-      (let [test (where-fn x)]
-        (cond
-         (error? test) test
-         test (f x)
-         :default x)))
-    {:type ::where :where-fn where-fn :f f}))
+(defn where [test-fn & fs]
+  (let [f (apply schema-fn fs)]
+    (with-meta
+      (fn where-fn-wrapper
+        [x]
+        (let [test (test-fn x)]
+          (cond
+           (error? test) x
+           test (f x)
+           :default x)))
+      {:type ::where :test-fn test-fn :f f})))
+
+(defn optional [& fs]
+  (apply where some? fs))
 
 ;; Decomposing Schemas for Property Paths
 

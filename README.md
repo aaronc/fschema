@@ -5,14 +5,15 @@ Clojurescript.
 
 fschema has the following design goals:
 
-- Have a simple intuitive API which allows for easy functional
-  composition of validators and mutators.
-- Provide detailed error messages which can easily be rendered into
-  human readable (and localizable error messages).
-- Allow for validation of individual properties within a complex
-  schema.
-- Return information about property paths in validation error
-  messages.
+- The API should be so simple and intuitive that you mostly just
+  remember it.
+- Validators and mutators should be simple functions. It should be
+  possible to create more complex validators and mutators through
+  function composition.
+- Error messages should be detailed and easy to transform into
+  *localized* error messages.
+- Error message should include information on property paths.
+- It should be possible to validate individual properties within a schema.
 
 An example:
 
@@ -141,7 +142,7 @@ user> (c/string? nil)
 nil
 
 user> (c/not-nil nil)
-[{:value nil, :error-id :fschema.constraints/not-nil, :message "Required value missing or nil"}]
+[{:value nil, :error-id :fschema.constraints/not-nil}]
 ```
 
 ## Composing validators and mutators
@@ -177,7 +178,7 @@ user> (v1 5)
 [{:value 5, :error-id :fschema.constraints/string?}]
 
 user> (v1 nil)
-[{:value nil, :error-id :fschema.constraints/not-nil, :message "Required value missing or nil"}]
+[{:value nil, :error-id :fschema.constraints/not-nil}]
 ```
 
 Mutators can also be composed using `schema-fn`:
@@ -258,6 +259,44 @@ user> ((each c/not-nil c/integer?) [1 2 3])
 [1 2 3]
 ```
 
+### where
+
+The `where` function is used to conditionally apply a chain of functions. Its
+first parameter is the test function that will be used to test if
+the remaining arguments should be applied (as a `schema-fn` chain). If
+the test-fn returns a `nil`, `false`, or `error` value, the
+function(s) won't be applied - test-fn may therefore be either a
+regular function or a validator.
+
+```
+user> ((where number? (c/> 0)) -1)
+[{:value -1, :error-id :fschema.constraints/>, :params [0]}]
+
+user> ((where number? (c/> 0)) "abc")
+"abc"
+```
+
+
+### defschema
+
+The `defschema` macro is a combination of `schema-fn` and `not-nil`.
+
+```clojure
+(defschema my-schema
+  {:a [c/not-nil c/integer]
+   :b [c/string?]})
+```
+is equivalent to:
+```clojure
+(def my-schema
+ (schema-fn
+   c/not-nil
+   {:a [c/not-nil c/integer]
+    :b [c/string?]}))
+```
+
+Syntatic sugar and nothing else...
+
 ## Creating Constraints
 
 ### constraint
@@ -276,7 +315,7 @@ The `not-nil` constraint is to be used whenever it is necessary to
 ensure that a value is not nil. *All other constraints will return
 *`nil`* when passed a *`nil`* value.
 
-### string?, number?, integer?, map?, vector?, seq?, keyword?, symbol?, set?, boolean?
+### string?, number?, integer?, map?, vector?, seq?, keyword?, symbol?, set?, coll?, list?, instance?, boolean?
     
 These constraints are available to validate the type of arguments.
 
@@ -293,6 +332,9 @@ user> (c/string? 7)
 
 user> (c/map? {:a 1})
 {:a 1}
+
+user> ((c/instance? String) [\a])
+[{:value [\a], :error-id :fschema.constraints/instance?, :params [java.lang.String]}]
 ```
 
 ### re-matches
