@@ -127,23 +127,12 @@ user> (c/string? "abc")
 "abc" ;; Constraints always return the value they were passed upon success
 
 user> ((c/> 5) 3)
+[{:value 3, :error-id :fschema.constraints/>, :params [5]}]
 ```
 
-### Constraints and nil values
-
-For every constraint other than the `not-nil` constraint, the
-constraint will *not* return an `error` when passed a `nil` value, but
-instead return `nil`. This is to facilitate the
-functional composability of constraints. To return an `error` when `nil` is
-passed in, the `not-nil` constraint must be used. 
-
-```clojure
-user> (c/string? nil)
-nil
-
-user> (c/not-nil nil)
-[{:value nil, :error-id :fschema.constraints/not-nil}]
-```
+*By default, all constraints include the *`not-nil`* constraint. To
+ allow for *`nil`* values to pass through silently (without an *`error`*)
+ the *`optional`* function can be used.*
 
 ## Composing validators and mutators
 
@@ -238,12 +227,6 @@ user> ((schema-fn {:a [c/not-nil {:b c/not-nil}]}) {:a {:b 5}})
 {:a {:b 5}}
 ```
 
-*Map validators will handle *`nil`* values like constraints - that is a
- *`nil`* value passed in will return *`nil`* as opposed to an error. This
- may seem counter-intuitive but it helps with composability and
- consistency. Please use *`(schema-fn c/not-nil {...})`* to ensure that
- the map is not *`nil`.
-
 ### each
 
 The `each` function is used to compose a `schema-fn` that will be executed
@@ -276,26 +259,16 @@ user> ((where number? (c/> 0)) "abc")
 "abc"
 ```
 
+### optional
 
-### defschema
-
-The `defschema` macro is a combination of `schema-fn` and `not-nil`.
+Optional is short-hand for `(where? some x)`. It is used to allow
+`nil` values to pass through silently without an `error`.
 
 ```clojure
-(defschema my-schema
-  {:a [c/not-nil c/integer]
-   :b [c/string?]})
-```
-is equivalent to:
-```clojure
-(def my-schema
- (schema-fn
-   c/not-nil
-   {:a [c/not-nil c/integer]
-    :b [c/string?]}))
+user> ((schema-fn {:a (optional c/integer?)}) {})
+{} ;; The fact that :a is a missing key is not flagged as an error
 ```
 
-Syntatic sugar and nothing else...
 
 ## Creating Constraints
 
@@ -313,7 +286,7 @@ TODO
 
 The `not-nil` constraint is to be used whenever it is necessary to
 ensure that a value is not nil. *All other constraints will return
-*`nil`* when passed a *`nil`* value.
+*`nil`* when passed a *`nil`* value.*
 
 ### string?, number?, integer?, map?, vector?, seq?, keyword?, symbol?, set?, coll?, list?, instance?, boolean?
     
