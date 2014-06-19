@@ -11,6 +11,17 @@
 (defn tag-constraint [f attrs]
   (with-meta f (assoc attrs :type :fschema.core/constraint)))
 
+(def not-nil
+  (let [attrs {:error-id :fschema.constraints/not-nil
+                ;:message "Required value missing or nil"
+               }]
+    (tag-constraint
+      (fn not-nil [x]
+        (if (nil? x)
+          (error (assoc attrs :value nil))
+          x))
+      attrs)))
+
 (defn constraint* [{:keys [name test-fn pre-constraint] :as attrs}]
   (let [attrs
         (-> attrs
@@ -20,10 +31,12 @@
         cstrnt
         (tag-constraint
          (fn test-constraint [x]
-           (when-not (nil? x)
-             (if-not (test-fn x)
-               (error (assoc attrs :value x))
-               x)))
+           (let [x (not-nil x)]
+             (if (error? x)
+               x
+               (if-not (test-fn x)
+                 (error (assoc attrs :value x))
+                 x))))
          attrs)]
     (if pre-constraint
       (tag-constraint
@@ -68,13 +81,3 @@
              (swap! fschema.core.constraint/defined-constraints assoc ~vcode (merge ~attrs {:test-fn '~test-fn :constraint ~vname}))
              #'~vname)))))
 
-(def not-nil
-  (let [attrs {:error-id :fschema.constraints/not-nil
-                ;:message "Required value missing or nil"
-               }]
-    (tag-constraint
-      (fn not-nil [x]
-        (if (nil? x)
-          (error (assoc attrs :value nil))
-          x))
-      attrs)))

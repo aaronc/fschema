@@ -38,7 +38,6 @@
   (let [fn-map (into {} (for [[k v] x] [k (schema-fn v)]))]
     (with-meta
       (schema-fn
-       c/not-nil
        c/map?
        (fn fschema-map [obj]
          (let [results
@@ -124,7 +123,6 @@
 (defn each [& fs]
   (let [f (apply schema-fn fs)]
     (schema-fn
-     c/not-nil
      c/eachable?
      (with-meta
        (fn each-fn-wrapper [xs]
