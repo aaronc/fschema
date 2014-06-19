@@ -101,11 +101,11 @@
   [f m]
   (let [xs-res
         (map
-         (fn [kvp]
-           (let [res (f kvp)]
+         (fn [[k v]]
+           (let [res (f v)]
              (if (error? res)
-               (prepend-error-paths res (first kvp))
-               res)))
+               (prepend-error-paths res k)
+               [k res])))
          m)]
     (if-let [errs (seq (filter error? xs-res))]
       (error errs)
@@ -128,6 +128,23 @@
        (fn each-fn-wrapper [xs]
          (each-fn f xs))
        {:type ::each
+        :func f}))))
+
+(defn- make-all-fn [f]
+  (fn all-fn [x]
+    (if-not (error? (c/eachable? x))
+      (each-fn (make-all-fn f) x)
+      (f x))))
+
+(defn all [& fs]
+  (let [f (apply schema-fn fs)
+        f* (make-all-fn f)]
+    (schema-fn
+     c/eachable?
+     (with-meta
+       (fn each-fn-wrapper [xs]
+         (each-fn f* xs))
+       {:type ::all
         :func f}))))
 
 (defn where [test-fn & fs]

@@ -24,10 +24,10 @@ An example:
 
 (def my-schema
     (schema-fn
-        {:a [c/not-nil (c/>= 0)]
-         :b [c/string?]
-         :c [c/not-nil c/keyword?]
-         :d [c/vector? (each c/integer?)]}))
+        {:a [(c/>= 0) (c/<= 12)]
+         :b (optional c/string?)
+         :c c/keyword?
+         :d (optional c/vector? (each c/integer?))}))
 
 (my-schema {:a -1})
 ;; [{:path [:a], :value -1, :error-id :fschema.constraints/>=, :params [0]}
@@ -253,33 +253,6 @@ user> ((schema-fn {}) [])
 [{:value [], :error-id :fschema.constraints/map?}]
 ```
 
-### each
-
-The `each` function is used to compose a `schema-fn` that will be executed
-upon each member of a sequence and return a sequence of the same type.
-
-```clojure
-user> ((each c/not-nil c/integer?) [1 2.0 nil])
-[{:path [1], :value 2.0, :error-id :fschema.constraints/integer?}
- {:path [2], :value nil, :error-id :fschema.constraints/not-nil}]
-;; each functions return the index in the sequence as part of the path
-
-user> ((each c/not-nil c/integer?) [1 2 3])
-[1 2 3]
-```
-
-*Each schema fn's check for* `nil` *values like constraints. They also
-ensure that the input value satisfies the* `eachable?` * constraint.*
-
-
-```clojure
-user> ((each c/integer?) nil)
-[{:value nil, :error-id :fschema.constraints/not-nil}]
-
-user> ((each c/integer?) 5)
-[{:value 5, :error-id :fschema.constraints/eachable?}]
-```
-
 ### where
 
 The `where` function is used to conditionally apply a chain of functions. Its
@@ -307,6 +280,50 @@ user> ((schema-fn {:a (optional c/integer?)}) {})
 {} ;; The fact that :a is a missing key is not flagged as an error
 ```
 
+### each
+
+The `each` function is used to compose a `schema-fn` that will be executed
+upon each member of a sequence and return a sequence of the same type.
+
+```clojure
+user> ((each c/not-nil c/integer?) [1 2.0 nil])
+[{:path [1], :value 2.0, :error-id :fschema.constraints/integer?}
+ {:path [2], :value nil, :error-id :fschema.constraints/not-nil}]
+;; each functions return the index in the sequence as part of the path
+
+user> ((each c/not-nil c/integer?) [1 2 3])
+[1 2 3]
+```
+
+*Each schema fn's check for* `nil` *values like constraints. They also
+ensure that the input value satisfies the* `eachable?` * constraint.*
+
+
+```clojure
+user> ((each c/integer?) nil)
+[{:value nil, :error-id :fschema.constraints/not-nil}]
+
+user> ((each c/integer?) 5)
+[{:value 5, :error-id :fschema.constraints/eachable?}]
+```
+
+`each` also works on the *values* of maps.
+
+```clojure
+user> ((each inc) {:a 1 :b 2})
+{:b 3, :a 2}
+```
+
+### all
+
+`all` is a *deep* version of `each`. This means that it applies its
+schema function to every *value* in a hierarchy of `eachable?`
+collections.
+
+```clojure
+user> ((all (where number? inc)) {:a [1 2 {:b 3} "d"] :c 4})
+{:c 5, :a [2 3 {:b 4} "d"]}
+```
 
 ## Creating Constraints
 
