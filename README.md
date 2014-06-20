@@ -47,7 +47,7 @@ An example:
 Add the following dependency to your `project.clj`:
 
 ```clojure
-[fschema "0.2.0"]
+[fschema "0.2.0-SNAPSHOT"]
 ```
 
 ## Basics
