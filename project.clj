@@ -10,6 +10,7 @@
                 {:source-paths ["src"]
                  :output-path "target/classes"
                  :rules :cljs}]}
+  :hooks [cljx.hooks]
   :profiles
   {:dev
    {:dependencies [[com.cemerick/piggieback "0.1.3"]
