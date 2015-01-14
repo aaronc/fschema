@@ -15,7 +15,7 @@
   {:dev
    {:dependencies [[com.cemerick/piggieback "0.1.3"]
                    [criterium "0.4.3"]]
-    :plugins [[com.keminglabs/cljx "0.4.0"]
+    :plugins [[com.keminglabs/cljx "0.4.0" :exclusions [org.clojure/clojure]]
     ;          [com.cemerick/austin "0.1.4"]
               ]
     :jvm-opts ^:replace []}})
