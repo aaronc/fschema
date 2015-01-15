@@ -1,5 +1,6 @@
-(defproject fschema "0.2.0-alpha1"
+(defproject fschema "0.2.0-alpha2"
   :description "Elegant functional validations and mutators for Clojure and Clojurescript"
+  :url "https://github.com/aaronc/fschema"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]]
