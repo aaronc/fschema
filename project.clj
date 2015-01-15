@@ -1,4 +1,4 @@
-(defproject fschema "0.2.0-SNAPSHOT"
+(defproject fschema "0.2.0-alpha1"
   :description "Elegant functional validations and mutators for Clojure and Clojurescript"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
